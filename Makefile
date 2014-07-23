@@ -22,7 +22,7 @@ uninstall: clean
 	rm /usr/local/bin/gomon
 
 config:
-	@if [ ! -a /usr/local/etc/gomon.gcfg ]; then \
+	@if [ ! -e /usr/local/etc/gomon.gcfg ]; then \
 		cp cmd/gomon.gcfg /usr/local/etc/gomon.gcfg; \
 	fi;
 
