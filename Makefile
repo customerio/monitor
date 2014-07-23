@@ -21,10 +21,14 @@ clean:
 uninstall: clean
 	rm /usr/local/bin/gomon
 
+config:
+	@if [ ! -a /usr/local/etc/gomon.gcfg ]; then \
+		cp cmd/gomon.gcfg /usr/local/etc/gomon.gcfg; \
+	fi;
+
 # Installs the systemd service, enables it and starts it
-install_systemd: install
+install_systemd: install config
 	cp cmd/systemd/gomon.service /etc/systemd/system/
-	if [ ! -a /usr/local/etc/gomon.gcfg ]; then cp cmd/systemd/gomon.gcfg /usr/local/etc/gomon.gcfg; fi;
 	systemctl enable /etc/systemd/system/gomon.service
 	systemctl start gomon.service
 
@@ -33,6 +37,14 @@ uninstall_systemd: uninstall
 	systemctl stop gomon.service
 	systemctl disable gomon.service
 	rm /etc/systemd/system/gomon.service
+
+install_upstart: install config
+	cp cmd/upstart/gomon.conf /etc/init/gomon.conf
+	start gomon
+
+uninstall_upstart: uninstall
+	stop gomon
+	rm /etc/init/gomon.conf
 
 # Uninstalls everything and removes the config file
 implode: uninstall uninstall_systemd
