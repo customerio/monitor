@@ -26,7 +26,7 @@ func (c *CPU) collect() {
             user, _ := strconv.ParseUint(f[1], 10, 64)
             nice, _ := strconv.ParseUint(f[2], 10, 64)
             system, _ := strconv.ParseUint(f[3], 10, 64)
-            idle, _ := strconv.ParseUint(f[4]], 10, 64)
+            idle, _ := strconv.ParseUint(f[4], 10, 64)
 
             c.current = map[string]int{
                 "user":   int(user),
