@@ -3,8 +3,10 @@ package cpu
 
 import (
     "time"
-    "unsafe"
     "strconv"
+    "os"
+    "bufio"
+    "regexp"
 )
 
 func (c *CPU) collect() {
