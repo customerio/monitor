@@ -1,4 +1,5 @@
 package cpu
+// via: https://github.com/measure/os
 
 import (
     "time"
@@ -22,11 +23,16 @@ func (c *CPU) collect() {
         is_cpu, err := regexp.MatchString("^cpu\\d*", f[0])
         if err == nil && is_cpu {
 
+            user, _ := strconv.ParseUint(f[1], 10, 64)
+            nice, _ := strconv.ParseUint(f[2], 10, 64)
+            system, _ := strconv.ParseUint(f[3], 10, 64)
+            idle, _ := strconv.ParseUint(f[4]], 10, 64)
+
             c.current = map[string]int{
-                "user":   int(strconv.ParseUint(f[1], 10, 64)),
-                "nice":   int(strconv.ParseUint(f[2], 10, 64)),
-                "system": int(strconv.ParseUint(f[3], 10, 64)),
-                "idle":   int(strconv.ParseUint(f[4]], 10, 64)),
+                "user":   int(user),
+                "nice":   int(nice),
+                "system": int(system),
+                "idle":   int(idle),
             }
             break
         }
