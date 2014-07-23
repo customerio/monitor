@@ -1,0 +1,10 @@
+[Unit]
+Description=Pluggable Go Server and Service Monitoring
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/gomon --config /usr/local/etc/gomon.gcfg
+
+[Install]
+WantedBy=multi-user.target

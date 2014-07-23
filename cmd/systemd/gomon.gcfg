@@ -1,0 +1,28 @@
+# Sample gomon configuration file
+# format: https://code.google.com/p/gcfg/
+
+[Services]
+
+## Librato credentials [eg. me@example.com:TOKEN]
+# librato=EMAIL:TOKEN
+
+## Stathat account email
+# stathat=EMAIL
+
+# Metrics to gather
+[Metrics]
+
+## Uncomment to report local CPU stats
+# cpu
+
+## Riak server to monitor [eg. localhost:8098]
+# riak=localhost:8098
+
+# Other configuration options
+[Options]
+
+## Interval to send metrics (see http://golang.org/pkg/time/#ParseDuration)
+# interval=1s
+
+## Sets the hostname (defaults to os.Hostname)
+# hostname=localhost
