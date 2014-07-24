@@ -7,6 +7,7 @@ import (
     "bufio"
     "regexp"
     "strings"
+    "math"
 )
 
 func (d *Disk) collect() {
@@ -34,6 +35,10 @@ func (d *Disk) collect() {
     }
 
     d.usage = disk_used / (disk_used + disk_available) * 100
+
+    if math.IsNaN(d.usage){
+        d.usage = 0
+    }
 }
 
 
