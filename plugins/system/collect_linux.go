@@ -22,7 +22,7 @@ func (s *System) collect() {
     if err != nil {
         panic(err)
     }
-    load_avg, _ := strconv.ParseFloat(strings.Split(data, " ")[0], 64)
+    load_avg, _ := strconv.ParseFloat(strings.Split(string(data), " ")[0], 64)
     s.loadAvg = load_avg
 
     // Now some memory stats
