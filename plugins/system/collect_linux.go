@@ -49,7 +49,7 @@ func (s *System) collect() {
     }
 
     s.memUsage = mem_free / mem_total * 100
-    s.swapUsage = (swap_total - swap_free) / swap_total
+    s.swapUsage = (swap_total - swap_free) / swap_total * 100
 }
 
 
