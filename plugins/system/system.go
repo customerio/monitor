@@ -9,7 +9,7 @@ type System struct {
     start  sync.Once
     loadAvg float64
     memUsage float64
-    swap float64
+    swapUsage float64
 }
 
 func New() *System {
@@ -24,8 +24,8 @@ func (s *System) MemUsage() *metric {
     return newMetric(s, "mem_usage")
 }
 
-func (s *System) SwapOuts() *metric {
-    return newMetric(s, "swap")
+func (s *System) SwapUsage() *metric {
+    return newMetric(s, "swap_usage")
 }
 
 
@@ -41,7 +41,7 @@ func (s *System) gather(name string) float64 {
     switch name {
         case "load_avg": return s.loadAvg
         case "mem_usage": return s.memUsage
-        case "swap": return s.swap
+        case "swap_usage": return s.swapUsage
         default: return 0
     }
 }

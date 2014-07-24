@@ -6,6 +6,11 @@ import (
     "strings"
 )
 
+func pullFloat64(str string) float64{
+    f, _ := strconv.ParseFloat(splitter.Split(str, -1)[1], 64)
+    return f
+}
+
 func (s *System) collect() {
 
     // Collect load average
@@ -26,18 +31,23 @@ func (s *System) collect() {
 
     splitter := regexp.MustCompile(" +")
 
-    var mem_total, mem_free float64
+    var mem_total, mem_free, swap_free, swap_total float64
 
     for scanner.Scan() {
         str := scanner.Text()
         if strings.HasPrefix(str, "MemTotal"){
-            mem_total, _ = strconv.ParseFloat(splitter.Split(str, -1)[1], 64)
+            mem_total = pullFloat64(str)
         }else if strings.HasPrefix(str, "MemFree"){
-            mem_free, _ = strconv.ParseFloat(splitter.Split(str, -1)[1], 64)
+            mem_free = pullFloat64(str)
+        }else if strings.HasPrefix(str, "SwapFree"){
+            swap_free = pullFloat64(str)
+        }else if strings.HasPrefix(str, "SwapTotal"){
+            swap_total = pullFloat64(str)
         }
     }
 
     s.memUsage = mem_free / mem_total * 100
+    s.swapUsage = (swap_total - swap_free) / swap_total
 }
 
 

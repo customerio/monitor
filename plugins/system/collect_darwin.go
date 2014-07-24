@@ -8,6 +8,13 @@ import (
     "regexp"
 )
 
+var splitter = regexp.MustCompile(" +")
+
+func pullFloat64(str string, index int) float64{
+    f, _ := strconv.ParseFloat(splitter.Split(str, -1)[index], 64)
+    return f
+}
+
 func (s *System) collect() {
 
     // Collect the load average from the uptime command
@@ -27,20 +34,23 @@ func (s *System) collect() {
 
     scanner := bufio.NewScanner(strings.NewReader(string(vmstat)))
 
-    splitter := regexp.MustCompile(" +")
+    
 
-    var pages_free, pages_active float64
+    var pages_free, pages_active, swap float64
 
     for scanner.Scan() {
         str := scanner.Text()
         if strings.HasPrefix(str, "Pages free"){
-            pages_free, _ = strconv.ParseFloat(splitter.Split(str, -1)[2], 64)
+            pages_free = pullFloat64(str, 2)
         }else if strings.HasPrefix(str, "Pages active"){
-            pages_active, _ = strconv.ParseFloat(splitter.Split(str, -1)[2], 64)
+            pages_active = pullFloat64(str, 2)
+        }else if strings.HasPrefix(str, "Swapouts"){
+            swap = pullFloat64(str, 1)
         }
     }
 
     s.memUsage = pages_active / (pages_active + pages_free) * 100
+    s.swapUsage = swap
 
 }
 
