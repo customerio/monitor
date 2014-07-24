@@ -33,8 +33,6 @@ func (s *System) collect() {
 
     scanner := bufio.NewScanner(strings.NewReader(string(meminfo)))
 
-    splitter := regexp.MustCompile(" +")
-
     var mem_total, mem_free, swap_free, swap_total float64
 
     for scanner.Scan() {
