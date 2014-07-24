@@ -4,7 +4,11 @@ import (
     "strconv"
     "io/ioutil"
     "strings"
+    "bufio"
+    "regexp"
 )
+
+var splitter = regexp.MustCompile(" +")
 
 func pullFloat64(str string) float64{
     f, _ := strconv.ParseFloat(splitter.Split(str, -1)[1], 64)
@@ -18,18 +22,16 @@ func (s *System) collect() {
     if err != nil {
         panic(err)
     }
-    load_avg, _ := strconv.ParseFloat(strings.split(data, " ")[0], 64)
-    s.loadAvg = loadavg
+    load_avg, _ := strconv.ParseFloat(strings.Split(string(data), " ")[0], 64)
+    s.loadAvg = load_avg
 
     // Now some memory stats
-    data, err := ioutil.ReadFile("/proc/meminfo")
+    meminfo, err := ioutil.ReadFile("/proc/meminfo")
     if err != nil {
         panic(err)
     }
 
-    scanner := bufio.NewScanner(strings.NewReader(string(vmstat)))
-
-    splitter := regexp.MustCompile(" +")
+    scanner := bufio.NewScanner(strings.NewReader(string(meminfo)))
 
     var mem_total, mem_free, swap_free, swap_total float64
 
