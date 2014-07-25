@@ -18,6 +18,9 @@
 ## Riak server to monitor [eg. localhost:8098]
 # riak=localhost:8098
 
+## Elasticsearch server to monitor [eg. localhost:9200]
+# elasticsearch=localhost:9200
+
 # Other configuration options
 [Options]
 
