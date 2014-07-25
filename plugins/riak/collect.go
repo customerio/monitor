@@ -29,7 +29,7 @@ func (r *Riak) collect() {
 	}
 
 	r.memory = grabInt(json, "memory_total")
-	r.gets = grabInt(json, "node_gets")
-	r.puts = grabInt(json, "node_puts")
+	r.gets = grabInt(json, "vnode_gets")
+	r.puts = grabInt(json, "vnode_puts")
 	r.index_gets = grabInt(json, "vnode_index_reads")
 }
