@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"encoding/json"
 	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"net/http"
@@ -13,7 +14,7 @@ func (e *Elasticsearch) collect() {
 	}
 	defer cluster.Body.Close()
 
-	node, err := http.Get("http://" + e.server + "/_stats")
+	node, err := http.Get("http://" + e.server + "/_nodes/_local/stats")
 	if err != nil {
 		panic(err)
 	}
@@ -39,14 +40,24 @@ func (e *Elasticsearch) collect() {
 		panic(err)
 	}
 
-	e.stats = map[string]int{
-		"nodes":   cjson.GetPath("nodes", "count", "total").MustInt(),
-		"cpu":     cjson.GetPath("nodes", "process", "cpu", "percent").MustInt(),
-		"memory":  cjson.GetPath("nodes", "jvm", "mem", "heap_used_in_bytes").MustInt(),
-		"docs":    njson.GetPath("_all", "total", "docs", "count").MustInt(),
-		"indexes": njson.GetPath("_all", "total", "indexing", "index_current").MustInt(),
-		"gets":    njson.GetPath("_all", "total", "get", "current").MustInt(),
+	e.stats = make(map[string]int)
+
+	if nodes := njson.Get("nodes").MustMap(); len(nodes) > 0 {
+		for _, data := range nodes {
+			j, _ := json.Marshal(data)
+			node, _ := simplejson.NewJson(j)
+
+			e.stats["cpu"] = node.GetPath("process", "cpu", "percent").MustInt()
+			e.stats["memory"] = node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()
+			e.stats["indexes"] = node.GetPath("indices", "indexing", "index_current").MustInt()
+			e.stats["gets"] = node.GetPath("indices", "get", "current").MustInt()
+			e.stats["searches"] = node.GetPath("indices", "search", "query_current").MustInt()
+			break
+		}
 	}
+
+	e.stats["nodes"] = cjson.GetPath("nodes", "count", "total").MustInt()
+	e.stats["docs"] = cjson.GetPath("indices", "docs", "count").MustInt()
 
 	status := cjson.Get("status").MustString()
 

@@ -52,6 +52,10 @@ func (e *Elasticsearch) Gets() *metric {
 	return newMetric(e, "gets")
 }
 
+func (e *Elasticsearch) Searches() *metric {
+	return newMetric(e, "searches")
+}
+
 func (e *Elasticsearch) run(step time.Duration) {
 	e.start.Do(func() {
 		for _ = range time.NewTicker(step).C {

@@ -100,6 +100,7 @@ func main() {
 		go monitor.Report(r.Docs(), gauge("elastic.docs"), time.Second)
 		go monitor.Report(r.Indexes(), gauge("elastic.indexes"), time.Second)
 		go monitor.Report(r.Gets(), gauge("elastic.gets"), time.Second)
+		go monitor.Report(r.Searches(), gauge("elastic.searches"), time.Second)
 	}
 
 	if cfg.Services.Librato != "" {
