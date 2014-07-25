@@ -27,7 +27,7 @@ type machine struct {
 
 func (f *FoundationDB) collect() {
 
-    usage, err := exec.Command("/usr/local/bin/fdbcli", "--exec", "status details").Output()
+    usage, err := exec.Command("fdbcli", "--exec", "status details").Output()
     if err != nil {
         fmt.Println(err)
     }
