@@ -49,9 +49,19 @@ func (e *Elasticsearch) collect() {
 
 			e.stats["cpu"] = node.GetPath("process", "cpu", "percent").MustInt()
 			e.stats["memory"] = node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()
-			e.stats["indexes"] = node.GetPath("indices", "indexing", "index_current").MustInt()
-			e.stats["gets"] = node.GetPath("indices", "get", "current").MustInt()
-			e.stats["searches"] = node.GetPath("indices", "search", "query_current").MustInt()
+
+			indexes := node.GetPath("indices", "indexing", "index_total").MustInt()
+			gets := node.GetPath("indices", "get", "total").MustInt()
+			searches := node.GetPath("indices", "search", "query_total").MustInt()
+
+			e.stats["indexes"] = indexes - e.previousIndexes
+			e.stats["gets"] = gets - e.previousGets
+			e.stats["searches"] = searches - e.previousSearches
+
+			e.previousIndexes = indexes
+			e.previousGets = gets
+			e.previousSearches = searches
+
 			break
 		}
 	}

@@ -12,9 +12,12 @@ const (
 )
 
 type Elasticsearch struct {
-	start  sync.Once
-	server string
-	stats  map[string]int
+	start            sync.Once
+	server           string
+	previousIndexes  int
+	previousGets     int
+	previousSearches int
+	stats            map[string]int
 }
 
 func New(srv string) *Elasticsearch {
