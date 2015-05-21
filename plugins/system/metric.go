@@ -1,22 +1,22 @@
 package system
 
 import (
-    "time"
+	"time"
 )
 
 type metric struct {
-    system  *System
-    name string
+	system *System
+	name   string
 }
 
 func newMetric(r *System, name string) *metric {
-    return &metric{r, name}
+	return &metric{r, name}
 }
 
 func (m *metric) Run(step time.Duration) {
-    m.system.run(step)
+	m.system.run(step)
 }
 
 func (m *metric) Report() float64 {
-    return m.system.gather(m.name)
+	return m.system.gather(m.name)
 }

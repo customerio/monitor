@@ -6,9 +6,9 @@ import (
 )
 
 type Disk struct {
-	start         sync.Once
-	filesystem 	string
-	usage float64
+	start      sync.Once
+	filesystem string
+	usage      float64
 }
 
 func New(fs string) *Disk {

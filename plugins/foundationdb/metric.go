@@ -5,7 +5,7 @@ import (
 )
 
 type metric struct {
-	fdb *FoundationDB
+	fdb  *FoundationDB
 	name string
 }
 

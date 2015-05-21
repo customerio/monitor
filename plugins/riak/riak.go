@@ -23,15 +23,15 @@ func (r *Riak) MemUsage() *metric {
 }
 
 func (r *Riak) Gets() *metric {
-    return newMetric(r, "gets")
+	return newMetric(r, "gets")
 }
 
 func (r *Riak) Puts() *metric {
-    return newMetric(r, "puts")
+	return newMetric(r, "puts")
 }
 
 func (r *Riak) IndexGets() *metric {
-    return newMetric(r, "index_gets")
+	return newMetric(r, "index_gets")
 }
 
 func (r *Riak) run(step time.Duration) {
@@ -44,11 +44,16 @@ func (r *Riak) run(step time.Duration) {
 
 func (r *Riak) gather(name string) float64 {
 
-    switch name {
-        case "mem_usage": return float64(r.memory)
-        case "gets": return float64(r.gets)
-        case "puts": return float64(r.puts)
-        case "index_gets": return float64(r.index_gets)
-        default: return 0
-    }
+	switch name {
+	case "mem_usage":
+		return float64(r.memory)
+	case "gets":
+		return float64(r.gets)
+	case "puts":
+		return float64(r.puts)
+	case "index_gets":
+		return float64(r.index_gets)
+	default:
+		return 0
+	}
 }

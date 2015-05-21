@@ -5,7 +5,7 @@ import (
 )
 
 type metric struct {
-	disk  *Disk
+	disk *Disk
 	name string
 }
 

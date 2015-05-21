@@ -15,42 +15,43 @@ func (m *MySQL) collect() {
 
 	err = db.Ping()
 	if err != nil {
-	    panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
 	rows, err := db.Query("SHOW STATUS")
-    if err != nil {
-        panic(err.Error()) // proper error handling instead of panic in your app
-    }
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
 
+	// Get column names
+	columns, err := rows.Columns()
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
 
-    // Get column names
-    columns, err := rows.Columns()
-    if err != nil {
-        panic(err.Error()) // proper error handling instead of panic in your app
-    }
+	// Make a slice for the values
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
 
-    // Make a slice for the values
-    values := make([]sql.RawBytes, len(columns))
-    scanArgs := make([]interface{}, len(values))
-    for i := range values {
-        scanArgs[i] = &values[i]
-    }
+	// Fetch rows
+	for rows.Next() {
+		// get RawBytes from data
+		err = rows.Scan(scanArgs...)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
 
-    // Fetch rows
-    for rows.Next() {
-        // get RawBytes from data
-        err = rows.Scan(scanArgs...)
-        if err != nil {
-            panic(err.Error()) // proper error handling instead of panic in your app
-        }	
+		value, _ := strconv.Atoi(string(values[1]))
 
-        value, _ := strconv.Atoi(string(values[1]))
-
-        switch string(values[0]){
-        	case "Queries": m.queries.Set(value)
-        	case "Slow_queries": m.slow.Set(value)
-        }
-    }
+		switch string(values[0]) {
+		case "Queries":
+			m.queries.Set(value)
+		case "Slow_queries":
+			m.slow.Set(value)
+		}
+	}
 
 }

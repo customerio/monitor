@@ -6,21 +6,21 @@ import (
 )
 
 type FoundationDB struct {
-	start      sync.Once
-    port int
+	start sync.Once
+	port  int
 
-    // instance stats
-    diskio int
-    ram_used float64
-    ram_total float64
-    traffic float64
-    cpu int
+	// instance stats
+	diskio    int
+	ram_used  float64
+	ram_total float64
+	traffic   float64
+	cpu       int
 
-    // Cluster stats
-    read_rate float64
-    write_rate float64
-    transaction_rate float64
-    conflict_rate float64
+	// Cluster stats
+	read_rate        float64
+	write_rate       float64
+	transaction_rate float64
+	conflict_rate    float64
 }
 
 func New(port int) *FoundationDB {
@@ -28,35 +28,35 @@ func New(port int) *FoundationDB {
 }
 
 func (f *FoundationDB) DiskIO() *metric {
-    return newMetric(f, "diskio")
+	return newMetric(f, "diskio")
 }
 
 func (f *FoundationDB) Traffic() *metric {
-    return newMetric(f, "traffic")
+	return newMetric(f, "traffic")
 }
 
 func (f *FoundationDB) CPU() *metric {
-    return newMetric(f, "cpu")
+	return newMetric(f, "cpu")
 }
 
 func (f *FoundationDB) RAM() *metric {
-    return newMetric(f, "ram")
+	return newMetric(f, "ram")
 }
 
 func (f *FoundationDB) ReadRate() *metric {
-    return newMetric(f, "read_rate")
+	return newMetric(f, "read_rate")
 }
 
 func (f *FoundationDB) WriteRate() *metric {
-    return newMetric(f, "write_rate")
+	return newMetric(f, "write_rate")
 }
 
 func (f *FoundationDB) TransactionRate() *metric {
-    return newMetric(f, "transaction_rate")
+	return newMetric(f, "transaction_rate")
 }
 
 func (f *FoundationDB) ConflictRate() *metric {
-    return newMetric(f, "conflict_rate")
+	return newMetric(f, "conflict_rate")
 }
 
 func (f *FoundationDB) run(step time.Duration) {
@@ -69,15 +69,23 @@ func (f *FoundationDB) run(step time.Duration) {
 
 func (f *FoundationDB) gather(name string) float64 {
 
-    switch name {
-        case "diskio": return float64(f.diskio)
-        case "ram": return f.ram_used / f.ram_total * 100
-        case "traffic": return f.traffic
-        case "cpu": return float64(f.cpu)
-        case "read_rate": return f.read_rate
-        case "write_rate": return f.write_rate
-        case "transaction_rate": return f.transaction_rate
-        case "conflict_rate": return f.conflict_rate
-    }
-    return 0
+	switch name {
+	case "diskio":
+		return float64(f.diskio)
+	case "ram":
+		return f.ram_used / f.ram_total * 100
+	case "traffic":
+		return f.traffic
+	case "cpu":
+		return float64(f.cpu)
+	case "read_rate":
+		return f.read_rate
+	case "write_rate":
+		return f.write_rate
+	case "transaction_rate":
+		return f.transaction_rate
+	case "conflict_rate":
+		return f.conflict_rate
+	}
+	return 0
 }

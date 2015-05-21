@@ -6,7 +6,7 @@ import (
 
 type metric struct {
 	mysql *MySQL
-	name string
+	name  string
 }
 
 func newMetric(m *MySQL, name string) *metric {
