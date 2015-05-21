@@ -1,12 +1,8 @@
 package riak
 
-import (
-	"sync"
-	"time"
-)
+import "time"
 
 type Riak struct {
-	start      sync.Once
 	memory     int
 	gets       int
 	puts       int
@@ -18,20 +14,20 @@ func New(srv string) *Riak {
 	return &Riak{server: srv}
 }
 
-func (r *Riak) MemUsage() *metric {
-	return newMetric(r, "mem_usage")
+func (r *Riak) MemUsage() float64 {
+	return float64(r.memory)
 }
 
-func (r *Riak) Gets() *metric {
-	return newMetric(r, "gets")
+func (r *Riak) Gets() float64 {
+	return float64(r.gets)
 }
 
-func (r *Riak) Puts() *metric {
-	return newMetric(r, "puts")
+func (r *Riak) Puts() float64 {
+	return float64(r.puts)
 }
 
-func (r *Riak) IndexGets() *metric {
-	return newMetric(r, "index_gets")
+func (r *Riak) IndexGets() float64 {
+	return float64(r.index_gets)
 }
 func (r *Riak) clear() {
 	r.memory = 0
@@ -40,26 +36,8 @@ func (r *Riak) clear() {
 	r.index_gets = 0
 }
 
-func (r *Riak) run(step time.Duration) {
-	r.start.Do(func() {
-		for _ = range time.Tick(step) {
-			r.collect()
-		}
-	})
-}
-
-func (r *Riak) gather(name string) float64 {
-
-	switch name {
-	case "mem_usage":
-		return float64(r.memory)
-	case "gets":
-		return float64(r.gets)
-	case "puts":
-		return float64(r.puts)
-	case "index_gets":
-		return float64(r.index_gets)
-	default:
-		return 0
+func (r *Riak) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		r.collect()
 	}
 }

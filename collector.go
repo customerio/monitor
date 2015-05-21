@@ -5,14 +5,40 @@ import (
 )
 
 type Collector interface {
-	Run(time.Duration)
 	Report() float64
 }
 
-func Report(c Collector, r Reporter, step time.Duration) {
-	go c.Run(step)
+type pair struct {
+	c Collector
+	r Reporter
+}
 
+var pairs []pair
+
+type wrapCollector struct {
+	report func() float64
+}
+
+func (w *wrapCollector) Report() float64 {
+	return w.report()
+}
+
+func CollectorFunc(report func() float64) Collector {
+	return &wrapCollector{report}
+}
+
+func ReportFunc(collector func() float64, r Reporter) {
+	Report(CollectorFunc(collector), r)
+}
+
+func Report(c Collector, r Reporter) {
+	pairs = append(pairs, pair{c, r})
+}
+
+func Run(step time.Duration) {
 	for _ = range time.Tick(step) {
-		r.Update(c.Report())
+		for _, p := range pairs {
+			p.r.Update(p.c.Report())
+		}
 	}
 }

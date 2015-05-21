@@ -1,13 +1,9 @@
 package foundationdb
 
-import (
-	"sync"
-	"time"
-)
+import "time"
 
 type FoundationDB struct {
-	start sync.Once
-	port  int
+	port int
 
 	// instance stats
 	diskio    int
@@ -27,36 +23,40 @@ func New(port int) *FoundationDB {
 	return &FoundationDB{port: port}
 }
 
-func (f *FoundationDB) DiskIO() *metric {
-	return newMetric(f, "diskio")
+func (f *FoundationDB) DiskIO() float64 {
+	return float64(f.diskio)
 }
 
-func (f *FoundationDB) Traffic() *metric {
-	return newMetric(f, "traffic")
+func (f *FoundationDB) Traffic() float64 {
+
+	return f.traffic
 }
 
-func (f *FoundationDB) CPU() *metric {
-	return newMetric(f, "cpu")
+func (f *FoundationDB) CPU() float64 {
+	return float64(f.cpu)
 }
 
-func (f *FoundationDB) RAM() *metric {
-	return newMetric(f, "ram")
+func (f *FoundationDB) RAM() float64 {
+	if f.ram_total == 0.0 {
+		return 0
+	}
+	return f.ram_used / f.ram_total * 100
 }
 
-func (f *FoundationDB) ReadRate() *metric {
-	return newMetric(f, "read_rate")
+func (f *FoundationDB) ReadRate() float64 {
+	return f.read_rate
 }
 
-func (f *FoundationDB) WriteRate() *metric {
-	return newMetric(f, "write_rate")
+func (f *FoundationDB) WriteRate() float64 {
+	return f.write_rate
 }
 
-func (f *FoundationDB) TransactionRate() *metric {
-	return newMetric(f, "transaction_rate")
+func (f *FoundationDB) TransactionRate() float64 {
+	return f.transaction_rate
 }
 
-func (f *FoundationDB) ConflictRate() *metric {
-	return newMetric(f, "conflict_rate")
+func (f *FoundationDB) ConflictRate() float64 {
+	return f.conflict_rate
 }
 
 func (f *FoundationDB) clear() {
@@ -71,12 +71,10 @@ func (f *FoundationDB) clear() {
 	f.conflict_rate = 0
 }
 
-func (f *FoundationDB) run(step time.Duration) {
-	f.start.Do(func() {
-		for _ = range time.Tick(step) {
-			f.collect()
-		}
-	})
+func (f *FoundationDB) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		f.collect()
+	}
 }
 
 func (f *FoundationDB) gather(name string) float64 {
@@ -85,22 +83,12 @@ func (f *FoundationDB) gather(name string) float64 {
 	case "diskio":
 		return float64(f.diskio)
 	case "ram":
-		if f.ram_total == 0.0 {
-			return 0
-		}
-		return f.ram_used / f.ram_total * 100
 	case "traffic":
-		return f.traffic
 	case "cpu":
-		return float64(f.cpu)
 	case "read_rate":
-		return f.read_rate
 	case "write_rate":
-		return f.write_rate
 	case "transaction_rate":
-		return f.transaction_rate
 	case "conflict_rate":
-		return f.conflict_rate
 	}
 	return 0
 }

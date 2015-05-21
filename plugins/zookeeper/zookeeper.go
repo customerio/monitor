@@ -2,14 +2,12 @@ package zookeeper
 
 import (
 	"log"
-	"sync"
 	"time"
 
 	"github.com/samuel/go-zookeeper/zk"
 )
 
 type Zookeeper struct {
-	start sync.Once
 	conn  *zk.Conn
 	paths []string
 	stats map[string]int
@@ -30,14 +28,14 @@ func New(servers []string) *Zookeeper {
 	}
 }
 
-func (z *Zookeeper) PathCounter(path string) *metric {
-	return newMetric(z, path)
+func (z *Zookeeper) PathCounter(path string) func() float64 {
+	return func() float64 {
+		return float64(z.stats[path])
+	}
 }
 
-func (z *Zookeeper) run(step time.Duration) {
-	z.start.Do(func() {
-		for _ = range time.Tick(step) {
-			z.collect()
-		}
-	})
+func (z *Zookeeper) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		z.collect()
+	}
 }

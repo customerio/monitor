@@ -1,12 +1,8 @@
 package cpu
 
-import (
-	"sync"
-	"time"
-)
+import "time"
 
 type CPU struct {
-	start         sync.Once
 	previous      map[string]int
 	current       map[string]int
 	currentTotal  int
@@ -18,16 +14,22 @@ func New() *CPU {
 	return &CPU{}
 }
 
-func (c *CPU) User() *metric {
-	return newMetric(c, "user")
+func (c *CPU) User() float64 {
+	return c.rate("user")
 }
 
-func (c *CPU) System() *metric {
-	return newMetric(c, "system")
+func (c *CPU) System() float64 {
+	return c.rate("system")
 }
 
-func (c *CPU) Idle() *metric {
-	return newMetric(c, "idle")
+func (c *CPU) Idle() float64 {
+	return c.rate("idle")
+}
+
+func (c *CPU) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		c.collect()
+	}
 }
 
 func (c *CPU) clear() {
@@ -35,14 +37,6 @@ func (c *CPU) clear() {
 	c.previous = map[string]int{}
 	c.currentTotal = 0
 	c.previousTotal = 0
-}
-
-func (c *CPU) run(step time.Duration) {
-	c.start.Do(func() {
-		for _ = range time.Tick(step) {
-			c.collect()
-		}
-	})
 }
 
 func (c *CPU) rate(name string) float64 {

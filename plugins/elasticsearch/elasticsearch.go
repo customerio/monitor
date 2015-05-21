@@ -1,9 +1,6 @@
 package elasticsearch
 
-import (
-	"sync"
-	"time"
-)
+import "time"
 
 const (
 	RED    = 0
@@ -12,7 +9,6 @@ const (
 )
 
 type Elasticsearch struct {
-	start            sync.Once
 	server           string
 	previousIndexes  int
 	previousGets     int
@@ -27,46 +23,44 @@ func New(srv string) *Elasticsearch {
 	}
 }
 
-func (e *Elasticsearch) Status() *metric {
-	return newMetric(e, "status")
+func (e *Elasticsearch) Status() float64 {
+	return float64(e.stats["status"])
 }
 
-func (e *Elasticsearch) Nodes() *metric {
-	return newMetric(e, "nodes")
+func (e *Elasticsearch) Nodes() float64 {
+	return float64(e.stats["nodes"])
 }
 
-func (e *Elasticsearch) CPU() *metric {
-	return newMetric(e, "cpu")
+func (e *Elasticsearch) CPU() float64 {
+	return float64(e.stats["cpu"])
 }
 
-func (e *Elasticsearch) Memory() *metric {
-	return newMetric(e, "memory")
+func (e *Elasticsearch) Memory() float64 {
+	return float64(e.stats["memory"])
 }
 
-func (e *Elasticsearch) Docs() *metric {
-	return newMetric(e, "docs")
+func (e *Elasticsearch) Docs() float64 {
+	return float64(e.stats["docs"])
 }
 
-func (e *Elasticsearch) Indexes() *metric {
-	return newMetric(e, "indexes")
+func (e *Elasticsearch) Indexes() float64 {
+	return float64(e.stats["indexes"])
 }
 
-func (e *Elasticsearch) Gets() *metric {
-	return newMetric(e, "gets")
+func (e *Elasticsearch) Gets() float64 {
+	return float64(e.stats["gets"])
 }
 
-func (e *Elasticsearch) Searches() *metric {
-	return newMetric(e, "searches")
+func (e *Elasticsearch) Searches() float64 {
+	return float64(e.stats["searches"])
 }
 
 func (e *Elasticsearch) clear() {
 	e.stats = map[string]int{}
 }
 
-func (e *Elasticsearch) run(step time.Duration) {
-	e.start.Do(func() {
-		for _ = range time.Tick(step) {
-			e.collect()
-		}
-	})
+func (e *Elasticsearch) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		e.collect()
+	}
 }
