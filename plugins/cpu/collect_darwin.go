@@ -1,6 +1,7 @@
 package cpu
 
 import (
+	"fmt"
 	"time"
 	"unsafe"
 )
@@ -15,8 +16,11 @@ import (
 import "C"
 
 func (c *CPU) collect() {
-	c.lastUpdate = time.Now()
-	c.previous = c.current
+	defer func() {
+		if r := recover(); r != nil {
+			c.clear()
+		}
+	}()
 
 	// collect CPU stats for All cpus aggregated
 	var cpuinfo C.host_cpu_load_info_data_t
@@ -27,8 +31,11 @@ func (c *CPU) collect() {
 		C.host_info_t(unsafe.Pointer(&cpuinfo)), &count)
 
 	if ret != C.KERN_SUCCESS {
-		return
+		panic(fmt.Errorf("error: %d", ret))
 	}
+
+	c.lastUpdate = time.Now()
+	c.previous = c.current
 
 	c.current = map[string]int{
 		"user":   int(cpuinfo.cpu_ticks[C.CPU_STATE_USER]),

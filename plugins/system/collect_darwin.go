@@ -16,6 +16,11 @@ func pullFloat64(str string, index int) float64 {
 }
 
 func (s *System) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			s.clear()
+		}
+	}()
 
 	// Collect the load average from the uptime command
 	uptime, err := exec.Command("uptime").Output()

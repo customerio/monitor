@@ -26,10 +26,15 @@ type machine struct {
 }
 
 func (f *FoundationDB) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			f.clear()
+		}
+	}()
 
 	usage, err := exec.Command("fdbcli", "--exec", "status details").Output()
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 
 	// Extract cluster information

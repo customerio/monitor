@@ -33,10 +33,16 @@ func (r *Riak) Puts() *metric {
 func (r *Riak) IndexGets() *metric {
 	return newMetric(r, "index_gets")
 }
+func (r *Riak) clear() {
+	r.memory = 0
+	r.gets = 0
+	r.puts = 0
+	r.index_gets = 0
+}
 
 func (r *Riak) run(step time.Duration) {
 	r.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
+		for _ = range time.Tick(step) {
 			r.collect()
 		}
 	})

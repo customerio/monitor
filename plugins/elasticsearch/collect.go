@@ -2,12 +2,19 @@ package elasticsearch
 
 import (
 	"encoding/json"
-	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/bitly/go-simplejson"
 )
 
 func (e *Elasticsearch) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			e.clear()
+		}
+	}()
+
 	cluster, err := http.Get("http://" + e.server + "/_cluster/stats")
 	if err != nil {
 		panic(err)

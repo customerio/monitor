@@ -6,6 +6,11 @@ import (
 )
 
 func (m *MySQL) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			m.clear()
+		}
+	}()
 
 	db, err := sql.Open("mysql", m.cs)
 	if err != nil {
@@ -15,18 +20,18 @@ func (m *MySQL) collect() {
 
 	err = db.Ping()
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
 
 	rows, err := db.Query("SHOW STATUS")
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
 
 	// Get column names
 	columns, err := rows.Columns()
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		panic(err.Error())
 	}
 
 	// Make a slice for the values
@@ -41,16 +46,16 @@ func (m *MySQL) collect() {
 		// get RawBytes from data
 		err = rows.Scan(scanArgs...)
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			panic(err.Error())
 		}
 
 		value, _ := strconv.Atoi(string(values[1]))
 
 		switch string(values[0]) {
 		case "Queries":
-			m.queries.Set(value)
+			m.queries.set(value)
 		case "Slow_queries":
-			m.slow.Set(value)
+			m.slow.set(value)
 		}
 	}
 

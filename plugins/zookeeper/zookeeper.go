@@ -1,10 +1,11 @@
 package zookeeper
 
 import (
-	"github.com/samuel/go-zookeeper/zk"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 type Zookeeper struct {
@@ -35,7 +36,7 @@ func (z *Zookeeper) PathCounter(path string) *metric {
 
 func (z *Zookeeper) run(step time.Duration) {
 	z.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
+		for _ = range time.Tick(step) {
 			z.collect()
 		}
 	})

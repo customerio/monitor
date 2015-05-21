@@ -12,7 +12,7 @@ type Collector interface {
 func Report(c Collector, r Reporter, step time.Duration) {
 	go c.Run(step)
 
-	for _ = range time.NewTicker(step).C {
+	for _ = range time.Tick(step) {
 		r.Update(c.Report())
 	}
 }

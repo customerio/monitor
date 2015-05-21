@@ -16,6 +16,11 @@ func pullFloat64(str string) float64 {
 }
 
 func (s *System) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			s.clear()
+		}
+	}()
 
 	// Collect load average
 	data, err := ioutil.ReadFile("/proc/loadavg")

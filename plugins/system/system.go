@@ -28,9 +28,15 @@ func (s *System) SwapUsage() *metric {
 	return newMetric(s, "swap_usage")
 }
 
+func (s *System) clear() {
+	s.loadAvg = 0
+	s.memUsage = 0
+	s.swapUsage = 0
+}
+
 func (s *System) run(step time.Duration) {
 	s.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
+		for _ = range time.Tick(step) {
 			s.collect()
 		}
 	})

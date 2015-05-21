@@ -59,9 +59,21 @@ func (f *FoundationDB) ConflictRate() *metric {
 	return newMetric(f, "conflict_rate")
 }
 
+func (f *FoundationDB) clear() {
+	f.diskio = 0
+	f.ram_used = 0
+	f.ram_total = 0
+	f.traffic = 0
+	f.cpu = 0
+	f.read_rate = 0
+	f.write_rate = 0
+	f.transaction_rate = 0
+	f.conflict_rate = 0
+}
+
 func (f *FoundationDB) run(step time.Duration) {
 	f.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
+		for _ = range time.Tick(step) {
 			f.collect()
 		}
 	})
@@ -73,6 +85,9 @@ func (f *FoundationDB) gather(name string) float64 {
 	case "diskio":
 		return float64(f.diskio)
 	case "ram":
+		if f.ram_total == 0.0 {
+			return 0
+		}
 		return f.ram_used / f.ram_total * 100
 	case "traffic":
 		return f.traffic

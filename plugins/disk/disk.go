@@ -19,9 +19,13 @@ func (d *Disk) Usage() *metric {
 	return newMetric(d, "usage")
 }
 
+func (d *Disk) clear() {
+	d.usage = 0
+}
+
 func (d *Disk) run(step time.Duration) {
 	d.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
+		for _ = range time.Tick(step) {
 			d.collect()
 		}
 	})

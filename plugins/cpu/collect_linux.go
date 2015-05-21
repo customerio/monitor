@@ -11,13 +11,19 @@ import (
 )
 
 func (c *CPU) collect() {
-	c.lastUpdate = time.Now()
-	c.previous = c.current
+	defer func() {
+		if r := recover(); r != nil {
+			c.clear()
+		}
+	}()
 
 	file, err := os.Open("/proc/stat")
 	if err != nil {
-		return
+		panic(err)
 	}
+
+	c.lastUpdate = time.Now()
+	c.previous = c.current
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {

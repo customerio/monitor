@@ -1,9 +1,10 @@
 package mysql
 
 import (
-	_ "github.com/go-sql-driver/mysql"
 	"sync"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type timediff struct {
@@ -11,8 +12,7 @@ type timediff struct {
 	prev    int
 }
 
-func (t *timediff) Set(v int) {
-
+func (t *timediff) set(v int) {
 	if t.prev == 0 {
 		t.prev = v
 	} else {
@@ -21,19 +21,19 @@ func (t *timediff) Set(v int) {
 	t.current = v
 }
 
-func (t *timediff) Gather() float64 {
+func (t *timediff) gather() float64 {
 	return float64(t.current - t.prev)
 }
 
 type MySQL struct {
 	start   sync.Once
 	cs      string
-	queries *timediff
-	slow    *timediff
+	queries timediff
+	slow    timediff
 }
 
 func New(connection_string string) *MySQL {
-	return &MySQL{cs: connection_string, queries: &timediff{}, slow: &timediff{}}
+	return &MySQL{cs: connection_string}
 }
 
 func (m *MySQL) Queries() *metric {
@@ -43,9 +43,14 @@ func (m *MySQL) SlowQueries() *metric {
 	return newMetric(m, "slow")
 }
 
+func (m *MySQL) clear() {
+	m.queries.set(0)
+	m.slow.set(0)
+}
+
 func (m *MySQL) run(step time.Duration) {
 	m.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
+		for _ = range time.Tick(step) {
 			m.collect()
 		}
 	})
@@ -54,9 +59,9 @@ func (m *MySQL) run(step time.Duration) {
 func (m *MySQL) gather(name string) float64 {
 	switch name {
 	case "queries":
-		return m.queries.Gather()
+		return m.queries.gather()
 	case "slow":
-		return m.slow.Gather()
+		return m.slow.gather()
 	}
 	return 0
 }

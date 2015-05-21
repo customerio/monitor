@@ -1,9 +1,10 @@
 package riak
 
 import (
-	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/bitly/go-simplejson"
 )
 
 func grabInt(json *simplejson.Json, metric string) int {
@@ -15,6 +16,11 @@ func grabInt(json *simplejson.Json, metric string) int {
 }
 
 func (r *Riak) collect() {
+	defer func() {
+		if rr := recover(); rr != nil {
+			r.clear()
+		}
+	}()
 
 	resp, _ := http.Get("http://" + r.server + "/stats")
 	defer resp.Body.Close()
