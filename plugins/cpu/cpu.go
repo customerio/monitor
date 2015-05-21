@@ -3,6 +3,7 @@ package cpu
 import (
 	"time"
 
+	"github.com/customerio/monitor/plugins"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -18,17 +19,11 @@ type CPU struct {
 	idle   metrics.GaugeFloat64
 }
 
-func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
-	m := metrics.NewGaugeFloat64()
-	registry.Register(name, m)
-	return m
-}
-
-func New(registry metrics.Registry) *CPU {
+func New() *CPU {
 	c := &CPU{}
-	c.user = gauge(registry, "cpu.user")
-	c.system = gauge(registry, "cpu.system")
-	c.idle = gauge(registry, "cpu.idle")
+	c.user = plugins.Gauge("cpu.user")
+	c.system = plugins.Gauge("cpu.system")
+	c.idle = plugins.Gauge("cpu.idle")
 	return c
 }
 

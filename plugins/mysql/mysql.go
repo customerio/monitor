@@ -3,7 +3,7 @@ package mysql
 import (
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/customerio/monitor/plugins"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -33,16 +33,10 @@ type MySQL struct {
 	slowGauge    metrics.GaugeFloat64
 }
 
-func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
-	m := metrics.NewGaugeFloat64()
-	registry.Register(name, m)
-	return m
-}
-
-func New(registry metrics.Registry, connection_string string) *MySQL {
+func New(connection_string string) *MySQL {
 	m := &MySQL{cs: connection_string}
-	m.queriesGauge = gauge(registry, "mysql.queries")
-	m.slowGauge = gauge(registry, "mysql.slow")
+	m.queriesGauge = plugins.Gauge("mysql.queries")
+	m.slowGauge = plugins.Gauge("mysql.slow")
 	return m
 }
 

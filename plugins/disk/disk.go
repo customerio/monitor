@@ -1,8 +1,10 @@
 package disk
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/customerio/monitor/plugins"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -11,10 +13,10 @@ type Disk struct {
 	usage      metrics.GaugeFloat64
 }
 
-func New(fs string, usage metrics.GaugeFloat64) *Disk {
+func New(i int, fs string) *Disk {
 	return &Disk{
 		filesystem: fs,
-		usage:      usage,
+		usage:      plugins.Gauge(fmt.Sprintf("disk.%d.usage", i)),
 	}
 }
 

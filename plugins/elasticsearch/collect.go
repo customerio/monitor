@@ -47,23 +47,21 @@ func (e *Elasticsearch) collect() {
 		panic(err)
 	}
 
-	e.stats = make(map[string]int)
-
 	if nodes := njson.Get("nodes").MustMap(); len(nodes) > 0 {
 		for _, data := range nodes {
 			j, _ := json.Marshal(data)
 			node, _ := simplejson.NewJson(j)
 
-			e.stats["cpu"] = node.GetPath("process", "cpu", "percent").MustInt()
-			e.stats["memory"] = node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()
+			e.gauges["cpu"].Update(float64(node.GetPath("process", "cpu", "percent").MustInt()))
+			e.gauges["memory"].Update(float64(node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()))
 
 			indexes := node.GetPath("indices", "indexing", "index_total").MustInt()
 			gets := node.GetPath("indices", "get", "total").MustInt()
 			searches := node.GetPath("indices", "search", "query_total").MustInt()
 
-			e.stats["indexes"] = indexes - e.previousIndexes
-			e.stats["gets"] = gets - e.previousGets
-			e.stats["searches"] = searches - e.previousSearches
+			e.gauges["indexes"].Update(float64(indexes - e.previousIndexes))
+			e.gauges["gets"].Update(float64(gets - e.previousGets))
+			e.gauges["searches"].Update(float64(searches - e.previousSearches))
 
 			e.previousIndexes = indexes
 			e.previousGets = gets
@@ -73,16 +71,16 @@ func (e *Elasticsearch) collect() {
 		}
 	}
 
-	e.stats["nodes"] = cjson.GetPath("nodes", "count", "total").MustInt()
-	e.stats["docs"] = cjson.GetPath("indices", "docs", "count").MustInt()
+	e.gauges["nodes"].Update(float64(cjson.GetPath("nodes", "count", "total").MustInt()))
+	e.gauges["docs"].Update(float64(cjson.GetPath("indices", "docs", "count").MustInt()))
 
 	status := cjson.Get("status").MustString()
 
 	if status == "green" {
-		e.stats["status"] = GREEN
+		e.gauges["status"].Update(float64(GREEN))
 	} else if status == "yellow" {
-		e.stats["status"] = YELLOW
+		e.gauges["status"].Update(float64(YELLOW))
 	} else {
-		e.stats["status"] = RED
+		e.gauges["status"].Update(float64(RED))
 	}
 }

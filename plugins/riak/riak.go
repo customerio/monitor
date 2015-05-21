@@ -3,6 +3,7 @@ package riak
 import (
 	"time"
 
+	"github.com/customerio/monitor/plugins"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -14,18 +15,12 @@ type Riak struct {
 	server     string
 }
 
-func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
-	m := metrics.NewGaugeFloat64()
-	registry.Register(name, m)
-	return m
-}
-
-func New(registry metrics.Registry, srv string) *Riak {
+func New(srv string) *Riak {
 	r := &Riak{server: srv}
-	r.memory = gauge(registry, "riak.mem_usage")
-	r.gets = gauge(registry, "riak.gets")
-	r.puts = gauge(registry, "riak.puts")
-	r.index_gets = gauge(registry, "riak.index_gets")
+	r.memory = plugins.Gauge("riak.mem_usage")
+	r.gets = plugins.Gauge("riak.gets")
+	r.puts = plugins.Gauge("riak.puts")
+	r.index_gets = plugins.Gauge("riak.index_gets")
 	return r
 }
 

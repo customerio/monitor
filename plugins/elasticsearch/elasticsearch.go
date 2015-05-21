@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"time"
 
+	"github.com/customerio/monitor/plugins"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -18,44 +19,33 @@ type Elasticsearch struct {
 	previousGets     int
 	previousSearches int
 
-	stats  map[string]int
 	gauges map[string]metrics.GaugeFloat64
 }
 
-func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
-	m := metrics.NewGaugeFloat64()
-	registry.Register(name, m)
-	return m
-}
-
-func New(registry metrics.Registry, srv string) *Elasticsearch {
+func New(srv string) *Elasticsearch {
 	e := &Elasticsearch{
 		server: srv,
-		stats:  make(map[string]int),
 		gauges: make(map[string]metrics.GaugeFloat64),
 	}
-	e.gauges["status"] = gauge(registry, "elastic.cluster")
-	e.gauges["nodes"] = gauge(registry, "elastic.nodes")
-	e.gauges["cpu"] = gauge(registry, "elastic.cpu")
-	e.gauges["memory"] = gauge(registry, "elastic.memory")
-	e.gauges["docs"] = gauge(registry, "elastic.docs")
-	e.gauges["gets"] = gauge(registry, "elastic.indexes")
-	e.gauges["indexes"] = gauge(registry, "elastic.gets")
-	e.gauges["searches"] = gauge(registry, "elastic.searches")
+	e.gauges["status"] = plugins.Gauge("elastic.cluster")
+	e.gauges["nodes"] = plugins.Gauge("elastic.nodes")
+	e.gauges["cpu"] = plugins.Gauge("elastic.cpu")
+	e.gauges["memory"] = plugins.Gauge("elastic.memory")
+	e.gauges["docs"] = plugins.Gauge("elastic.docs")
+	e.gauges["gets"] = plugins.Gauge("elastic.indexes")
+	e.gauges["indexes"] = plugins.Gauge("elastic.gets")
+	e.gauges["searches"] = plugins.Gauge("elastic.searches")
 	return e
 }
 
 func (e *Elasticsearch) clear() {
-	e.stats = map[string]int{}
+	for _, g := range e.gauges {
+		g.Update(0)
+	}
 }
 
 func (e *Elasticsearch) Run(step time.Duration) {
 	for _ = range time.Tick(step) {
 		e.collect()
-		for k, g := range e.gauges {
-			if v, ok := e.stats[k]; ok {
-				g.Update(float64(v))
-			}
-		}
 	}
 }

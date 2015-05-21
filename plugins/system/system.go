@@ -3,6 +3,7 @@ package system
 import (
 	"time"
 
+	"github.com/customerio/monitor/plugins"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -12,17 +13,11 @@ type System struct {
 	swapUsage metrics.GaugeFloat64
 }
 
-func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
-	m := metrics.NewGaugeFloat64()
-	registry.Register(name, m)
-	return m
-}
-
-func New(registry metrics.Registry) *System {
+func New() *System {
 	s := &System{}
-	s.loadAvg = gauge(registry, "system.load")
-	s.memUsage = gauge(registry, "system.mem_usage")
-	s.swapUsage = gauge(registry, "system.swap_usage")
+	s.loadAvg = plugins.Gauge("system.load")
+	s.memUsage = plugins.Gauge("system.mem_usage")
+	s.swapUsage = plugins.Gauge("system.swap_usage")
 	return s
 }
 

@@ -3,6 +3,7 @@ package foundationdb
 import (
 	"time"
 
+	"github.com/customerio/monitor/plugins"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -22,23 +23,17 @@ type FoundationDB struct {
 	conflict_rate    metrics.GaugeFloat64
 }
 
-func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
-	m := metrics.NewGaugeFloat64()
-	registry.Register(name, m)
-	return m
-}
-
-func New(registry metrics.Registry, port int) *FoundationDB {
+func New(port int) *FoundationDB {
 	f := &FoundationDB{port: port}
 
-	f.diskio = gauge(registry, "fdb.diskio")
-	f.traffic = gauge(registry, "fdb.traffic")
-	f.cpu = gauge(registry, "fdb.cpu")
-	f.ram = gauge(registry, "fdb.ram")
-	f.read_rate = gauge(registry, "fdb.rate.read")
-	f.write_rate = gauge(registry, "fdb.rate.write")
-	f.transaction_rate = gauge(registry, "fdb.rate.transaction")
-	f.conflict_rate = gauge(registry, "fdb.rate.conflict")
+	f.diskio = plugins.Gauge("fdb.diskio")
+	f.traffic = plugins.Gauge("fdb.traffic")
+	f.cpu = plugins.Gauge("fdb.cpu")
+	f.ram = plugins.Gauge("fdb.ram")
+	f.read_rate = plugins.Gauge("fdb.rate.read")
+	f.write_rate = plugins.Gauge("fdb.rate.write")
+	f.transaction_rate = plugins.Gauge("fdb.rate.transaction")
+	f.conflict_rate = plugins.Gauge("fdb.rate.conflict")
 
 	return f
 }
