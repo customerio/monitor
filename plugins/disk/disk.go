@@ -1,22 +1,25 @@
 package disk
 
-import "time"
+import (
+	"time"
+
+	"github.com/rcrowley/go-metrics"
+)
 
 type Disk struct {
 	filesystem string
-	usage      float64
+	usage      metrics.GaugeFloat64
 }
 
-func New(fs string) *Disk {
-	return &Disk{filesystem: fs}
-}
-
-func (d *Disk) Usage() float64 {
-	return d.usage
+func New(fs string, usage metrics.GaugeFloat64) *Disk {
+	return &Disk{
+		filesystem: fs,
+		usage:      usage,
+	}
 }
 
 func (d *Disk) clear() {
-	d.usage = 0
+	d.usage.Update(0)
 }
 
 func (d *Disk) Run(step time.Duration) {

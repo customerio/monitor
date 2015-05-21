@@ -1,94 +1,61 @@
 package foundationdb
 
-import "time"
+import (
+	"time"
+
+	"github.com/rcrowley/go-metrics"
+)
 
 type FoundationDB struct {
 	port int
 
 	// instance stats
-	diskio    int
-	ram_used  float64
-	ram_total float64
-	traffic   float64
-	cpu       int
+	diskio  metrics.GaugeFloat64
+	ram     metrics.GaugeFloat64
+	traffic metrics.GaugeFloat64
+	cpu     metrics.GaugeFloat64
 
 	// Cluster stats
-	read_rate        float64
-	write_rate       float64
-	transaction_rate float64
-	conflict_rate    float64
+	read_rate        metrics.GaugeFloat64
+	write_rate       metrics.GaugeFloat64
+	transaction_rate metrics.GaugeFloat64
+	conflict_rate    metrics.GaugeFloat64
 }
 
-func New(port int) *FoundationDB {
-	return &FoundationDB{port: port}
+func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
+	m := metrics.NewGaugeFloat64()
+	registry.Register(name, m)
+	return m
 }
 
-func (f *FoundationDB) DiskIO() float64 {
-	return float64(f.diskio)
-}
+func New(registry metrics.Registry, port int) *FoundationDB {
+	f := &FoundationDB{port: port}
 
-func (f *FoundationDB) Traffic() float64 {
+	f.diskio = gauge(registry, "fdb.diskio")
+	f.traffic = gauge(registry, "fdb.traffic")
+	f.cpu = gauge(registry, "fdb.cpu")
+	f.ram = gauge(registry, "fdb.ram")
+	f.read_rate = gauge(registry, "fdb.rate.read")
+	f.write_rate = gauge(registry, "fdb.rate.write")
+	f.transaction_rate = gauge(registry, "fdb.rate.transaction")
+	f.conflict_rate = gauge(registry, "fdb.rate.conflict")
 
-	return f.traffic
-}
-
-func (f *FoundationDB) CPU() float64 {
-	return float64(f.cpu)
-}
-
-func (f *FoundationDB) RAM() float64 {
-	if f.ram_total == 0.0 {
-		return 0
-	}
-	return f.ram_used / f.ram_total * 100
-}
-
-func (f *FoundationDB) ReadRate() float64 {
-	return f.read_rate
-}
-
-func (f *FoundationDB) WriteRate() float64 {
-	return f.write_rate
-}
-
-func (f *FoundationDB) TransactionRate() float64 {
-	return f.transaction_rate
-}
-
-func (f *FoundationDB) ConflictRate() float64 {
-	return f.conflict_rate
+	return f
 }
 
 func (f *FoundationDB) clear() {
-	f.diskio = 0
-	f.ram_used = 0
-	f.ram_total = 0
-	f.traffic = 0
-	f.cpu = 0
-	f.read_rate = 0
-	f.write_rate = 0
-	f.transaction_rate = 0
-	f.conflict_rate = 0
+	f.diskio.Update(0)
+	f.ram.Update(0)
+	f.traffic.Update(0)
+	f.cpu.Update(0)
+	f.read_rate.Update(0)
+	f.write_rate.Update(0)
+	f.transaction_rate.Update(0)
+	f.conflict_rate.Update(0)
 }
 
 func (f *FoundationDB) Run(step time.Duration) {
 	for _ = range time.Tick(step) {
 		f.collect()
 	}
-}
-
-func (f *FoundationDB) gather(name string) float64 {
-
-	switch name {
-	case "diskio":
-		return float64(f.diskio)
-	case "ram":
-	case "traffic":
-	case "cpu":
-	case "read_rate":
-	case "write_rate":
-	case "transaction_rate":
-	case "conflict_rate":
-	}
-	return 0
 }

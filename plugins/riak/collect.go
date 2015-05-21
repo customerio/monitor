@@ -7,12 +7,12 @@ import (
 	"github.com/bitly/go-simplejson"
 )
 
-func grabInt(json *simplejson.Json, metric string) int {
+func grabInt(json *simplejson.Json, metric string) float64 {
 	m, err := json.Get(metric).Int()
 	if err != nil {
 		panic(err)
 	}
-	return m
+	return float64(m)
 }
 
 func (r *Riak) collect() {
@@ -34,8 +34,8 @@ func (r *Riak) collect() {
 		panic(err)
 	}
 
-	r.memory = grabInt(json, "memory_total")
-	r.gets = grabInt(json, "vnode_gets")
-	r.puts = grabInt(json, "vnode_puts")
-	r.index_gets = grabInt(json, "vnode_index_reads")
+	r.memory.Update(grabInt(json, "memory_total"))
+	r.gets.Update(grabInt(json, "vnode_gets"))
+	r.puts.Update(grabInt(json, "vnode_puts"))
+	r.index_gets.Update(grabInt(json, "vnode_index_reads"))
 }

@@ -28,7 +28,7 @@ func (s *System) collect() {
 		panic(err)
 	}
 	load_avg, _ := strconv.ParseFloat(strings.Split(string(data), " ")[0], 64)
-	s.loadAvg = load_avg
+	s.loadAvg.Update(load_avg)
 
 	// Now some memory stats
 	meminfo, err := ioutil.ReadFile("/proc/meminfo")
@@ -54,13 +54,13 @@ func (s *System) collect() {
 	}
 
 	if mem_total != 0.0 {
-		s.memUsage = mem_free / mem_total * 100
+		s.memUsage.Update(mem_free / mem_total * 100)
 	} else {
-		s.memUsage = 0
+		s.memUsage.Update(0)
 	}
 	if swap_total != 0.0 {
-		s.swapUsage = (swap_total - swap_free) / swap_total * 100
+		s.swapUsage.Update((swap_total - swap_free) / swap_total * 100)
 	} else {
-		s.swapUsage = 0
+		s.swapUsage.Update(0)
 	}
 }

@@ -85,6 +85,6 @@ func (d *Disk) collect() {
 
 	drive := all_disks.get(d.filesystem)
 	if drive != nil {
-		d.usage = drive.usage()
+		d.usage.Update(drive.usage())
 	}
 }

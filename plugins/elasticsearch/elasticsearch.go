@@ -1,6 +1,10 @@
 package elasticsearch
 
-import "time"
+import (
+	"time"
+
+	"github.com/rcrowley/go-metrics"
+)
 
 const (
 	RED    = 0
@@ -13,46 +17,32 @@ type Elasticsearch struct {
 	previousIndexes  int
 	previousGets     int
 	previousSearches int
-	stats            map[string]int
+
+	stats  map[string]int
+	gauges map[string]metrics.GaugeFloat64
 }
 
-func New(srv string) *Elasticsearch {
-	return &Elasticsearch{
+func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
+	m := metrics.NewGaugeFloat64()
+	registry.Register(name, m)
+	return m
+}
+
+func New(registry metrics.Registry, srv string) *Elasticsearch {
+	e := &Elasticsearch{
 		server: srv,
 		stats:  make(map[string]int),
+		gauges: make(map[string]metrics.GaugeFloat64),
 	}
-}
-
-func (e *Elasticsearch) Status() float64 {
-	return float64(e.stats["status"])
-}
-
-func (e *Elasticsearch) Nodes() float64 {
-	return float64(e.stats["nodes"])
-}
-
-func (e *Elasticsearch) CPU() float64 {
-	return float64(e.stats["cpu"])
-}
-
-func (e *Elasticsearch) Memory() float64 {
-	return float64(e.stats["memory"])
-}
-
-func (e *Elasticsearch) Docs() float64 {
-	return float64(e.stats["docs"])
-}
-
-func (e *Elasticsearch) Indexes() float64 {
-	return float64(e.stats["indexes"])
-}
-
-func (e *Elasticsearch) Gets() float64 {
-	return float64(e.stats["gets"])
-}
-
-func (e *Elasticsearch) Searches() float64 {
-	return float64(e.stats["searches"])
+	e.gauges["status"] = gauge(registry, "elastic.cluster")
+	e.gauges["nodes"] = gauge(registry, "elastic.nodes")
+	e.gauges["cpu"] = gauge(registry, "elastic.cpu")
+	e.gauges["memory"] = gauge(registry, "elastic.memory")
+	e.gauges["docs"] = gauge(registry, "elastic.docs")
+	e.gauges["gets"] = gauge(registry, "elastic.indexes")
+	e.gauges["indexes"] = gauge(registry, "elastic.gets")
+	e.gauges["searches"] = gauge(registry, "elastic.searches")
+	return e
 }
 
 func (e *Elasticsearch) clear() {
@@ -62,5 +52,10 @@ func (e *Elasticsearch) clear() {
 func (e *Elasticsearch) Run(step time.Duration) {
 	for _ = range time.Tick(step) {
 		e.collect()
+		for k, g := range e.gauges {
+			if v, ok := e.stats[k]; ok {
+				g.Update(float64(v))
+			}
+		}
 	}
 }

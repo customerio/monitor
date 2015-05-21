@@ -1,39 +1,39 @@
 package riak
 
-import "time"
+import (
+	"time"
+
+	"github.com/rcrowley/go-metrics"
+)
 
 type Riak struct {
-	memory     int
-	gets       int
-	puts       int
-	index_gets int
+	memory     metrics.GaugeFloat64
+	gets       metrics.GaugeFloat64
+	puts       metrics.GaugeFloat64
+	index_gets metrics.GaugeFloat64
 	server     string
 }
 
-func New(srv string) *Riak {
-	return &Riak{server: srv}
+func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
+	m := metrics.NewGaugeFloat64()
+	registry.Register(name, m)
+	return m
 }
 
-func (r *Riak) MemUsage() float64 {
-	return float64(r.memory)
+func New(registry metrics.Registry, srv string) *Riak {
+	r := &Riak{server: srv}
+	r.memory = gauge(registry, "riak.mem_usage")
+	r.gets = gauge(registry, "riak.gets")
+	r.puts = gauge(registry, "riak.puts")
+	r.index_gets = gauge(registry, "riak.index_gets")
+	return r
 }
 
-func (r *Riak) Gets() float64 {
-	return float64(r.gets)
-}
-
-func (r *Riak) Puts() float64 {
-	return float64(r.puts)
-}
-
-func (r *Riak) IndexGets() float64 {
-	return float64(r.index_gets)
-}
 func (r *Riak) clear() {
-	r.memory = 0
-	r.gets = 0
-	r.puts = 0
-	r.index_gets = 0
+	r.memory.Update(0)
+	r.gets.Update(0)
+	r.puts.Update(0)
+	r.index_gets.Update(0)
 }
 
 func (r *Riak) Run(step time.Duration) {

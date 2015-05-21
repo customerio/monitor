@@ -4,6 +4,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/rcrowley/go-metrics"
 )
 
 type timediff struct {
@@ -25,20 +26,24 @@ func (t *timediff) gather() float64 {
 }
 
 type MySQL struct {
-	cs      string
-	queries timediff
-	slow    timediff
+	cs           string
+	queries      timediff
+	slow         timediff
+	queriesGauge metrics.GaugeFloat64
+	slowGauge    metrics.GaugeFloat64
 }
 
-func New(connection_string string) *MySQL {
-	return &MySQL{cs: connection_string}
+func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
+	m := metrics.NewGaugeFloat64()
+	registry.Register(name, m)
+	return m
 }
 
-func (m *MySQL) Queries() float64 {
-	return m.queries.gather()
-}
-func (m *MySQL) SlowQueries() float64 {
-	return m.slow.gather()
+func New(registry metrics.Registry, connection_string string) *MySQL {
+	m := &MySQL{cs: connection_string}
+	m.queriesGauge = gauge(registry, "mysql.queries")
+	m.slowGauge = gauge(registry, "mysql.slow")
+	return m
 }
 
 func (m *MySQL) clear() {
@@ -49,5 +54,7 @@ func (m *MySQL) clear() {
 func (m *MySQL) Run(step time.Duration) {
 	for _ = range time.Tick(step) {
 		m.collect()
+		m.queriesGauge.Update(m.queries.gather())
+		m.slowGauge.Update(m.slow.gather())
 	}
 }

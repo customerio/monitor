@@ -1,6 +1,10 @@
 package cpu
 
-import "time"
+import (
+	"time"
+
+	"github.com/rcrowley/go-metrics"
+)
 
 type CPU struct {
 	previous      map[string]int
@@ -8,27 +12,33 @@ type CPU struct {
 	currentTotal  int
 	previousTotal int
 	lastUpdate    time.Time
+
+	user   metrics.GaugeFloat64
+	system metrics.GaugeFloat64
+	idle   metrics.GaugeFloat64
 }
 
-func New() *CPU {
-	return &CPU{}
+func gauge(registry metrics.Registry, name string) metrics.GaugeFloat64 {
+	m := metrics.NewGaugeFloat64()
+	registry.Register(name, m)
+	return m
 }
 
-func (c *CPU) User() float64 {
-	return c.rate("user")
-}
-
-func (c *CPU) System() float64 {
-	return c.rate("system")
-}
-
-func (c *CPU) Idle() float64 {
-	return c.rate("idle")
+func New(registry metrics.Registry) *CPU {
+	c := &CPU{}
+	c.user = gauge(registry, "cpu.user")
+	c.system = gauge(registry, "cpu.system")
+	c.idle = gauge(registry, "cpu.idle")
+	return c
 }
 
 func (c *CPU) Run(step time.Duration) {
 	for _ = range time.Tick(step) {
 		c.collect()
+
+		c.user.Update(c.rate("user"))
+		c.system.Update(c.rate("system"))
+		c.idle.Update(c.rate("idle"))
 	}
 }
 

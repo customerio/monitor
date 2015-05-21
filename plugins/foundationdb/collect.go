@@ -42,33 +42,39 @@ func (f *FoundationDB) collect() {
 		hz := bytesToFloat64(matched[2])
 		switch string(matched[1]) {
 		case "Read":
-			f.read_rate = hz
+			f.read_rate.Update(hz)
 		case "Write":
-			f.write_rate = hz
+			f.write_rate.Update(hz)
 		case "Transaction":
-			f.transaction_rate = hz
+			f.transaction_rate.Update(hz)
 		case "Conflict":
-			f.conflict_rate = hz
+			f.conflict_rate.Update(hz)
 		}
 	}
 
+	var ram_used, ram_total float64
 	// Extract machine-specific information
 	ips := myIps()
 	for _, matched := range detail_regex.FindAllSubmatch(usage, -1) {
 
 		if ips[string(matched[1])] && bytesToInt(matched[2]) == f.port {
 
-			f.cpu = bytesToInt(matched[3])
-			f.traffic = bytesToFloat64(matched[5])
-			f.diskio = bytesToInt(matched[6])
-			f.ram_used = bytesToFloat64(matched[7])
-			f.ram_total = bytesToFloat64(matched[8])
+			f.cpu.Update(float64(bytesToInt(matched[3])))
+			f.traffic.Update(bytesToFloat64(matched[5]))
+			f.diskio.Update(float64(bytesToInt(matched[6])))
+			ram_used = bytesToFloat64(matched[7])
+			ram_total = bytesToFloat64(matched[8])
 
-			return
+			break
 
 		}
 	}
 
+	if ram_total == 0.0 {
+		f.ram.Update(0)
+	} else {
+		f.ram.Update(ram_used / ram_total * 100)
+	}
 }
 
 func myIps() map[string]bool {
