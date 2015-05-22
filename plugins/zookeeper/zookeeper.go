@@ -11,10 +11,11 @@ import (
 )
 
 type Zookeeper struct {
-	conn  *zk.Conn
-	paths []string
+	conn *zk.Conn
 
-	gauges map[string]metrics.GaugeFloat64
+	// Parallel arrays.
+	paths  []string
+	gauges []metrics.GaugeFloat64
 }
 
 func New(servers []string) *Zookeeper {
@@ -27,12 +28,13 @@ func New(servers []string) *Zookeeper {
 	return &Zookeeper{
 		conn:   conn,
 		paths:  nil,
-		gauges: map[string]metrics.GaugeFloat64{},
+		gauges: nil,
 	}
 }
 
 func (z *Zookeeper) Add(path string) {
-	z.gauges[path] = plugins.Gauge("zk." + strings.Trim(strings.Replace(path, "/", ".", -1), "."))
+	z.paths = append(z.paths, path)
+	z.gauges = append(z.gauges, plugins.Gauge("zk."+strings.Trim(strings.Replace(path, "/", ".", -1), ".")))
 }
 
 func (z *Zookeeper) Run(step time.Duration) {

@@ -52,16 +52,16 @@ func (e *Elasticsearch) collect() {
 			j, _ := json.Marshal(data)
 			node, _ := simplejson.NewJson(j)
 
-			e.gauges["cpu"].Update(float64(node.GetPath("process", "cpu", "percent").MustInt()))
-			e.gauges["memory"].Update(float64(node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()))
+			e.gauges[cpuGauge].Update(float64(node.GetPath("process", "cpu", "percent").MustInt()))
+			e.gauges[memoryGauge].Update(float64(node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()))
 
 			indexes := node.GetPath("indices", "indexing", "index_total").MustInt()
 			gets := node.GetPath("indices", "get", "total").MustInt()
 			searches := node.GetPath("indices", "search", "query_total").MustInt()
 
-			e.gauges["indexes"].Update(float64(indexes - e.previousIndexes))
-			e.gauges["gets"].Update(float64(gets - e.previousGets))
-			e.gauges["searches"].Update(float64(searches - e.previousSearches))
+			e.gauges[indexesGauge].Update(float64(indexes - e.previousIndexes))
+			e.gauges[getsGauge].Update(float64(gets - e.previousGets))
+			e.gauges[searchesGauge].Update(float64(searches - e.previousSearches))
 
 			e.previousIndexes = indexes
 			e.previousGets = gets
@@ -71,16 +71,16 @@ func (e *Elasticsearch) collect() {
 		}
 	}
 
-	e.gauges["nodes"].Update(float64(cjson.GetPath("nodes", "count", "total").MustInt()))
-	e.gauges["docs"].Update(float64(cjson.GetPath("indices", "docs", "count").MustInt()))
+	e.gauges[nodesGauge].Update(float64(cjson.GetPath("nodes", "count", "total").MustInt()))
+	e.gauges[docsGauge].Update(float64(cjson.GetPath("indices", "docs", "count").MustInt()))
 
 	status := cjson.Get("status").MustString()
 
 	if status == "green" {
-		e.gauges["status"].Update(float64(GREEN))
+		e.gauges[statusGauge].Update(float64(statusGreen))
 	} else if status == "yellow" {
-		e.gauges["status"].Update(float64(YELLOW))
+		e.gauges[statusGauge].Update(float64(statusYellow))
 	} else {
-		e.gauges["status"].Update(float64(RED))
+		e.gauges[statusGauge].Update(float64(statusRed))
 	}
 }

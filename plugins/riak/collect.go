@@ -34,8 +34,8 @@ func (r *Riak) collect() {
 		panic(err)
 	}
 
-	r.memory.Update(grabInt(json, "memory_total"))
-	r.gets.Update(grabInt(json, "vnode_gets"))
-	r.puts.Update(grabInt(json, "vnode_puts"))
-	r.index_gets.Update(grabInt(json, "vnode_index_reads"))
+	r.gauges[memoryGauge].Update(grabInt(json, "memory_total"))
+	r.gauges[getsGauge].Update(grabInt(json, "vnode_gets"))
+	r.gauges[putsGauge].Update(grabInt(json, "vnode_puts"))
+	r.gauges[indexGetsGauge].Update(grabInt(json, "vnode_index_reads"))
 }

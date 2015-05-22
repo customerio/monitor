@@ -14,17 +14,6 @@ import (
 var detail_regex = regexp.MustCompile(`([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ \(]+ ([0-9]+)% cpu; *([0-9]+)% machine; *([0-9\.]+) Gbps; *([0-9]+)% disk IO; *([0-9\.]+) GB +/ *([0-9\.]+)`)
 var workload_regex = regexp.MustCompile(` +([a-zA-Z]+) rate +- +([0-9]+) Hz`)
 
-type machine struct {
-	ip        string
-	port      int
-	cpu       int
-	machine   int
-	gbps      float64
-	diskio    int
-	ram_used  float64
-	ram_total float64
-}
-
 func (f *FoundationDB) collect() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -42,13 +31,13 @@ func (f *FoundationDB) collect() {
 		hz := bytesToFloat64(matched[2])
 		switch string(matched[1]) {
 		case "Read":
-			f.read_rate.Update(hz)
+			f.gauges[readRateGauge].Update(hz)
 		case "Write":
-			f.write_rate.Update(hz)
+			f.gauges[writeRateGauge].Update(hz)
 		case "Transaction":
-			f.transaction_rate.Update(hz)
+			f.gauges[transactionRateGauge].Update(hz)
 		case "Conflict":
-			f.conflict_rate.Update(hz)
+			f.gauges[conflictRateGauge].Update(hz)
 		}
 	}
 
@@ -59,9 +48,9 @@ func (f *FoundationDB) collect() {
 
 		if ips[string(matched[1])] && bytesToInt(matched[2]) == f.port {
 
-			f.cpu.Update(float64(bytesToInt(matched[3])))
-			f.traffic.Update(bytesToFloat64(matched[5]))
-			f.diskio.Update(float64(bytesToInt(matched[6])))
+			f.gauges[cpuGauge].Update(float64(bytesToInt(matched[3])))
+			f.gauges[trafficGauge].Update(bytesToFloat64(matched[5]))
+			f.gauges[diskioGauge].Update(float64(bytesToInt(matched[6])))
 			ram_used = bytesToFloat64(matched[7])
 			ram_total = bytesToFloat64(matched[8])
 
@@ -71,9 +60,9 @@ func (f *FoundationDB) collect() {
 	}
 
 	if ram_total == 0.0 {
-		f.ram.Update(0)
+		f.gauges[ramGauge].Update(0)
 	} else {
-		f.ram.Update(ram_used / ram_total * 100)
+		f.gauges[ramGauge].Update(ram_used / ram_total * 100)
 	}
 }
 

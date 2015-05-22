@@ -25,30 +25,38 @@ func (t *timediff) gather() float64 {
 	return float64(t.current - t.prev)
 }
 
+const (
+	queriesGauge = iota
+	slowGauge
+)
+
 type MySQL struct {
-	cs           string
-	queries      timediff
-	slow         timediff
-	queriesGauge metrics.GaugeFloat64
-	slowGauge    metrics.GaugeFloat64
+	cs     string
+	values []timediff
+	gauges []metrics.GaugeFloat64
 }
 
 func New(connection_string string) *MySQL {
-	m := &MySQL{cs: connection_string}
-	m.queriesGauge = plugins.Gauge("mysql.queries")
-	m.slowGauge = plugins.Gauge("mysql.slow")
-	return m
+	return &MySQL{cs: connection_string,
+		values: make([]timediff, 2),
+		gauges: []metrics.GaugeFloat64{
+			queriesGauge: plugins.Gauge("mysql.queries"),
+			slowGauge:    plugins.Gauge("mysql.slow"),
+		},
+	}
 }
 
 func (m *MySQL) clear() {
-	m.queries.set(0)
-	m.slow.set(0)
+	for i, _ := range m.values {
+		m.values[i].set(0)
+	}
 }
 
 func (m *MySQL) Run(step time.Duration) {
 	for _ = range time.Tick(step) {
 		m.collect()
-		m.queriesGauge.Update(m.queries.gather())
-		m.slowGauge.Update(m.slow.gather())
+		for i, v := range m.values {
+			m.gauges[i].Update(v.gather())
+		}
 	}
 }

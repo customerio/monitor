@@ -8,9 +8,20 @@ import (
 )
 
 const (
-	RED    = 0
-	YELLOW = 1
-	GREEN  = 2
+	statusRed    = 0
+	statusYellow = 1
+	statusGreen  = 2
+)
+
+const (
+	statusGauge = iota
+	nodesGauge
+	cpuGauge
+	memoryGauge
+	docsGauge
+	getsGauge
+	indexesGauge
+	searchesGauge
 )
 
 type Elasticsearch struct {
@@ -19,22 +30,23 @@ type Elasticsearch struct {
 	previousGets     int
 	previousSearches int
 
-	gauges map[string]metrics.GaugeFloat64
+	gauges []metrics.GaugeFloat64
 }
 
 func New(srv string) *Elasticsearch {
 	e := &Elasticsearch{
 		server: srv,
-		gauges: make(map[string]metrics.GaugeFloat64),
+		gauges: []metrics.GaugeFloat64{
+			statusGauge:   plugins.Gauge("elastic.cluster"),
+			nodesGauge:    plugins.Gauge("elastic.nodes"),
+			cpuGauge:      plugins.Gauge("elastic.cpu"),
+			memoryGauge:   plugins.Gauge("elastic.memory"),
+			docsGauge:     plugins.Gauge("elastic.docs"),
+			getsGauge:     plugins.Gauge("elastic.indexes"),
+			indexesGauge:  plugins.Gauge("elastic.gets"),
+			searchesGauge: plugins.Gauge("elastic.searches"),
+		},
 	}
-	e.gauges["status"] = plugins.Gauge("elastic.cluster")
-	e.gauges["nodes"] = plugins.Gauge("elastic.nodes")
-	e.gauges["cpu"] = plugins.Gauge("elastic.cpu")
-	e.gauges["memory"] = plugins.Gauge("elastic.memory")
-	e.gauges["docs"] = plugins.Gauge("elastic.docs")
-	e.gauges["gets"] = plugins.Gauge("elastic.indexes")
-	e.gauges["indexes"] = plugins.Gauge("elastic.gets")
-	e.gauges["searches"] = plugins.Gauge("elastic.searches")
 	return e
 }
 

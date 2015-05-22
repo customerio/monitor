@@ -7,46 +7,45 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
+const (
+	// instance stats
+	diskioGauge = iota
+	ramGauge
+	trafficGauge
+	cpuGauge
+
+	// Cluster stats
+	readRateGauge
+	writeRateGauge
+	transactionRateGauge
+	conflictRateGauge
+)
+
 type FoundationDB struct {
 	port int
 
-	// instance stats
-	diskio  metrics.GaugeFloat64
-	ram     metrics.GaugeFloat64
-	traffic metrics.GaugeFloat64
-	cpu     metrics.GaugeFloat64
-
-	// Cluster stats
-	read_rate        metrics.GaugeFloat64
-	write_rate       metrics.GaugeFloat64
-	transaction_rate metrics.GaugeFloat64
-	conflict_rate    metrics.GaugeFloat64
+	gauges []metrics.GaugeFloat64
 }
 
 func New(port int) *FoundationDB {
-	f := &FoundationDB{port: port}
-
-	f.diskio = plugins.Gauge("fdb.diskio")
-	f.traffic = plugins.Gauge("fdb.traffic")
-	f.cpu = plugins.Gauge("fdb.cpu")
-	f.ram = plugins.Gauge("fdb.ram")
-	f.read_rate = plugins.Gauge("fdb.rate.read")
-	f.write_rate = plugins.Gauge("fdb.rate.write")
-	f.transaction_rate = plugins.Gauge("fdb.rate.transaction")
-	f.conflict_rate = plugins.Gauge("fdb.rate.conflict")
-
-	return f
+	return &FoundationDB{port: port,
+		gauges: []metrics.GaugeFloat64{
+			diskioGauge:          plugins.Gauge("fdb.diskio"),
+			trafficGauge:         plugins.Gauge("fdb.traffic"),
+			cpuGauge:             plugins.Gauge("fdb.cpu"),
+			ramGauge:             plugins.Gauge("fdb.ram"),
+			readRateGauge:        plugins.Gauge("fdb.rate.read"),
+			writeRateGauge:       plugins.Gauge("fdb.rate.write"),
+			transactionRateGauge: plugins.Gauge("fdb.rate.transaction"),
+			conflictRateGauge:    plugins.Gauge("fdb.rate.conflict"),
+		},
+	}
 }
 
 func (f *FoundationDB) clear() {
-	f.diskio.Update(0)
-	f.ram.Update(0)
-	f.traffic.Update(0)
-	f.cpu.Update(0)
-	f.read_rate.Update(0)
-	f.write_rate.Update(0)
-	f.transaction_rate.Update(0)
-	f.conflict_rate.Update(0)
+	for _, v := range f.gauges {
+		v.Update(0)
+	}
 }
 
 func (f *FoundationDB) Run(step time.Duration) {

@@ -7,28 +7,33 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
+const (
+	memoryGauge = iota
+	getsGauge
+	putsGauge
+	indexGetsGauge
+)
+
 type Riak struct {
-	memory     metrics.GaugeFloat64
-	gets       metrics.GaugeFloat64
-	puts       metrics.GaugeFloat64
-	index_gets metrics.GaugeFloat64
-	server     string
+	server string
+	gauges []metrics.GaugeFloat64
 }
 
 func New(srv string) *Riak {
-	r := &Riak{server: srv}
-	r.memory = plugins.Gauge("riak.mem_usage")
-	r.gets = plugins.Gauge("riak.gets")
-	r.puts = plugins.Gauge("riak.puts")
-	r.index_gets = plugins.Gauge("riak.index_gets")
-	return r
+	return &Riak{server: srv,
+		gauges: []metrics.GaugeFloat64{
+			memoryGauge:    plugins.Gauge("riak.mem_usage"),
+			getsGauge:      plugins.Gauge("riak.gets"),
+			putsGauge:      plugins.Gauge("riak.puts"),
+			indexGetsGauge: plugins.Gauge("riak.index_gets"),
+		},
+	}
 }
 
 func (r *Riak) clear() {
-	r.memory.Update(0)
-	r.gets.Update(0)
-	r.puts.Update(0)
-	r.index_gets.Update(0)
+	for _, g := range r.gauges {
+		g.Update(0)
+	}
 }
 
 func (r *Riak) Run(step time.Duration) {

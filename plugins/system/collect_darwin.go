@@ -29,7 +29,7 @@ func (s *System) collect() {
 	}
 
 	load_avg, _ := strconv.ParseFloat(strings.Split(string(uptime), " ")[9], 64)
-	s.loadAvg.Update(load_avg)
+	s.gauges[loadAvgGauge].Update(load_avg)
 
 	// Now some memory stats
 	vmstat, err := exec.Command("vm_stat").Output()
@@ -53,10 +53,10 @@ func (s *System) collect() {
 	}
 
 	if (pages_active + pages_free) != 0.0 {
-		s.memUsage.Update(pages_active / (pages_active + pages_free) * 100)
+		s.gauges[memUsageGauge].Update(pages_active / (pages_active + pages_free) * 100)
 	} else {
-		s.memUsage.Update(0)
+		s.gauges[memUsageGauge].Update(0)
 	}
-	s.swapUsage.Update(swap)
+	s.gauges[swapUsageGauge].Update(swap)
 
 }

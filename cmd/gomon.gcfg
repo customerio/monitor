@@ -13,10 +13,12 @@
 [Metrics]
 
 ## Uncomment to report local CPU stats
-# cpu
+cpu
+system
+disk=largest,/dev/disk1
 
 ## Riak server to monitor [eg. localhost:8098]
-# riak=localhost:8098
+riak=localhost:8098
 
 ## Elasticsearch server to monitor [eg. localhost:9200]
 elasticsearch=localhost:9200

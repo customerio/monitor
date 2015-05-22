@@ -53,9 +53,9 @@ func (m *MySQL) collect() {
 
 		switch string(values[0]) {
 		case "Queries":
-			m.queries.set(value)
+			m.values[queriesGauge].set(value)
 		case "Slow_queries":
-			m.slow.set(value)
+			m.values[slowGauge].set(value)
 		}
 	}
 

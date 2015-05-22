@@ -37,11 +37,11 @@ func (c *CPU) collect() {
 			system, _ := strconv.ParseUint(f[3], 10, 64)
 			idle, _ := strconv.ParseUint(f[4], 10, 64)
 
-			c.current = map[string]int{
-				"user":   int(user),
-				"nice":   int(nice),
-				"system": int(system),
-				"idle":   int(idle),
+			c.current = []int{
+				userGauge:   int(user),
+				niceGauge:   int(nice),
+				systemGauge: int(system),
+				idleGauge:   int(idle),
 			}
 			break
 		}
@@ -52,5 +52,5 @@ func (c *CPU) collect() {
 	}
 
 	c.previousTotal = c.currentTotal
-	c.currentTotal = c.current["user"] + c.current["nice"] + c.current["system"] + c.current["idle"]
+	c.currentTotal = c.current[userGauge] + c.current[niceGauge] + c.current[systemGauge] + c.current[idleGauge]
 }
