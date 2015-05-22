@@ -1,6 +1,7 @@
 package riak
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -18,11 +19,15 @@ func grabInt(json *simplejson.Json, metric string) float64 {
 func (r *Riak) collect() {
 	defer func() {
 		if rr := recover(); rr != nil {
+			fmt.Printf("panic: Riak: %v\n", rr)
 			r.clear()
 		}
 	}()
 
-	resp, _ := http.Get("http://" + r.server + "/stats")
+	resp, err := http.Get("http://" + r.server + "/stats")
+	if err != nil {
+		panic(err)
+	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)

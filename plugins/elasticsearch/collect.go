@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 func (e *Elasticsearch) collect() {
 	defer func() {
 		if r := recover(); r != nil {
+			fmt.Printf("panic: Elasticsearch: %v\n", r)
 			e.clear()
 		}
 	}()

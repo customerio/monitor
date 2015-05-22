@@ -4,6 +4,7 @@ package cpu
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 func (c *CPU) collect() {
 	defer func() {
 		if r := recover(); r != nil {
+			fmt.Printf("panic: CPU: %v\n", r)
 			c.clear()
 		}
 	}()

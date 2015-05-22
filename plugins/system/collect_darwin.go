@@ -2,6 +2,7 @@ package system
 
 import (
 	"bufio"
+	"fmt"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -18,6 +19,7 @@ func pullFloat64(str string, index int) float64 {
 func (s *System) collect() {
 	defer func() {
 		if r := recover(); r != nil {
+			fmt.Printf("panic: System: %v\n", r)
 			s.clear()
 		}
 	}()

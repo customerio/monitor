@@ -17,6 +17,7 @@ var workload_regex = regexp.MustCompile(` +([a-zA-Z]+) rate +- +([0-9]+) Hz`)
 func (f *FoundationDB) collect() {
 	defer func() {
 		if r := recover(); r != nil {
+			fmt.Printf("panic: FoundationDB: %v\n", r)
 			f.clear()
 		}
 	}()

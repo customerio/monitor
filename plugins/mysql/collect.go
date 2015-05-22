@@ -2,12 +2,16 @@ package mysql
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func (m *MySQL) collect() {
 	defer func() {
 		if r := recover(); r != nil {
+			fmt.Printf("panic: MySQL: %v\n", r)
 			m.clear()
 		}
 	}()

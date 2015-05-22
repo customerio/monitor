@@ -4,6 +4,7 @@ import (
 	"github.com/customerio/monitor/plugins/cpu"
 	"github.com/customerio/monitor/plugins/disk"
 	"github.com/customerio/monitor/plugins/elasticsearch"
+	"github.com/customerio/monitor/plugins/mysql"
 	"github.com/customerio/monitor/plugins/riak"
 	"github.com/customerio/monitor/plugins/system"
 	"github.com/rcrowley/go-metrics"
@@ -31,6 +32,7 @@ type Config struct {
 		Riak          string
 		Elasticsearch string
 		Disk          string
+		MySQL         string
 	}
 	Options struct {
 		Interval string
@@ -100,6 +102,11 @@ func main() {
 		}
 	}
 
+	if cfg.Metrics.MySQL != "" {
+		m := mysql.New(cfg.Metrics.MySQL)
+		go m.Run(time.Second)
+	}
+
 	if cfg.Metrics.Riak != "" {
 		r := riak.New(cfg.Metrics.Riak)
 		go r.Run(time.Second)
@@ -109,7 +116,6 @@ func main() {
 		r := elasticsearch.New(cfg.Metrics.Elasticsearch)
 		go r.Run(time.Second)
 	}
-
 	if cfg.Services.Librato != "" {
 		credentials := strings.Split(cfg.Services.Librato, ":")
 		if len(credentials) != 2 {
