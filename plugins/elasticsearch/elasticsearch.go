@@ -42,8 +42,8 @@ func New(srv string) *Elasticsearch {
 			cpuGauge:      plugins.Gauge("elastic.cpu"),
 			memoryGauge:   plugins.Gauge("elastic.memory"),
 			docsGauge:     plugins.Gauge("elastic.docs"),
-			getsGauge:     plugins.Gauge("elastic.indexes"),
-			indexesGauge:  plugins.Gauge("elastic.gets"),
+			indexesGauge:  plugins.Gauge("elastic.indexes"),
+			getsGauge:     plugins.Gauge("elastic.gets"),
 			searchesGauge: plugins.Gauge("elastic.searches"),
 		},
 	}
