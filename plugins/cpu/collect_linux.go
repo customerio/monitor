@@ -4,6 +4,7 @@ package cpu
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -11,13 +12,20 @@ import (
 )
 
 func (c *CPU) collect() {
-	c.lastUpdate = time.Now()
-	c.previous = c.current
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("panic: CPU: %v\n", r)
+			c.clear()
+		}
+	}()
 
 	file, err := os.Open("/proc/stat")
 	if err != nil {
-		return
+		panic(err)
 	}
+
+	c.lastUpdate = time.Now()
+	c.previous = c.current
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -31,11 +39,11 @@ func (c *CPU) collect() {
 			system, _ := strconv.ParseUint(f[3], 10, 64)
 			idle, _ := strconv.ParseUint(f[4], 10, 64)
 
-			c.current = map[string]int{
-				"user":   int(user),
-				"nice":   int(nice),
-				"system": int(system),
-				"idle":   int(idle),
+			c.current = []int{
+				userGauge:   int(user),
+				niceGauge:   int(nice),
+				systemGauge: int(system),
+				idleGauge:   int(idle),
 			}
 			break
 		}
@@ -46,5 +54,5 @@ func (c *CPU) collect() {
 	}
 
 	c.previousTotal = c.currentTotal
-	c.currentTotal = c.current["user"] + c.current["nice"] + c.current["system"] + c.current["idle"]
+	c.currentTotal = c.current[userGauge] + c.current[niceGauge] + c.current[systemGauge] + c.current[idleGauge]
 }

@@ -1,35 +1,31 @@
 package disk
 
 import (
-	"sync"
+	"fmt"
 	"time"
+
+	"github.com/customerio/monitor/plugins"
+	"github.com/rcrowley/go-metrics"
 )
 
 type Disk struct {
-	start      sync.Once
 	filesystem string
-	usage      float64
+	usage      metrics.GaugeFloat64
 }
 
-func New(fs string) *Disk {
-	return &Disk{filesystem: fs}
-}
-
-func (d *Disk) Usage() *metric {
-	return newMetric(d, "usage")
-}
-
-func (d *Disk) run(step time.Duration) {
-	d.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
-			d.collect()
-		}
-	})
-}
-
-func (d *Disk) rate(name string) float64 {
-	if name == "usage" {
-		return d.usage
+func New(i int, fs string) *Disk {
+	return &Disk{
+		filesystem: fs,
+		usage:      plugins.Gauge(fmt.Sprintf("disk.%d.usage", i)),
 	}
-	return 0
+}
+
+func (d *Disk) clear() {
+	d.usage.Update(0)
+}
+
+func (d *Disk) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		d.collect()
+	}
 }

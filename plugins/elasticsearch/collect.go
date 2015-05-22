@@ -2,12 +2,21 @@ package elasticsearch
 
 import (
 	"encoding/json"
-	"github.com/bitly/go-simplejson"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/bitly/go-simplejson"
 )
 
 func (e *Elasticsearch) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("panic: Elasticsearch: %v\n", r)
+			e.clear()
+		}
+	}()
+
 	cluster, err := http.Get("http://" + e.server + "/_cluster/stats")
 	if err != nil {
 		panic(err)
@@ -40,23 +49,21 @@ func (e *Elasticsearch) collect() {
 		panic(err)
 	}
 
-	e.stats = make(map[string]int)
-
 	if nodes := njson.Get("nodes").MustMap(); len(nodes) > 0 {
 		for _, data := range nodes {
 			j, _ := json.Marshal(data)
 			node, _ := simplejson.NewJson(j)
 
-			e.stats["cpu"] = node.GetPath("process", "cpu", "percent").MustInt()
-			e.stats["memory"] = node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()
+			e.gauges[cpuGauge].Update(float64(node.GetPath("process", "cpu", "percent").MustInt()))
+			e.gauges[memoryGauge].Update(float64(node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()))
 
 			indexes := node.GetPath("indices", "indexing", "index_total").MustInt()
 			gets := node.GetPath("indices", "get", "total").MustInt()
 			searches := node.GetPath("indices", "search", "query_total").MustInt()
 
-			e.stats["indexes"] = indexes - e.previousIndexes
-			e.stats["gets"] = gets - e.previousGets
-			e.stats["searches"] = searches - e.previousSearches
+			e.gauges[indexesGauge].Update(float64(indexes - e.previousIndexes))
+			e.gauges[getsGauge].Update(float64(gets - e.previousGets))
+			e.gauges[searchesGauge].Update(float64(searches - e.previousSearches))
 
 			e.previousIndexes = indexes
 			e.previousGets = gets
@@ -66,16 +73,16 @@ func (e *Elasticsearch) collect() {
 		}
 	}
 
-	e.stats["nodes"] = cjson.GetPath("nodes", "count", "total").MustInt()
-	e.stats["docs"] = cjson.GetPath("indices", "docs", "count").MustInt()
+	e.gauges[nodesGauge].Update(float64(cjson.GetPath("nodes", "count", "total").MustInt()))
+	e.gauges[docsGauge].Update(float64(cjson.GetPath("indices", "docs", "count").MustInt()))
 
 	status := cjson.Get("status").MustString()
 
 	if status == "green" {
-		e.stats["status"] = GREEN
+		e.gauges[statusGauge].Update(float64(statusGreen))
 	} else if status == "yellow" {
-		e.stats["status"] = YELLOW
+		e.gauges[statusGauge].Update(float64(statusYellow))
 	} else {
-		e.stats["status"] = RED
+		e.gauges[statusGauge].Update(float64(statusRed))
 	}
 }

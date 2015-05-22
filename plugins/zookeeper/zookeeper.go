@@ -1,21 +1,24 @@
 package zookeeper
 
 import (
-	"github.com/samuel/go-zookeeper/zk"
 	"log"
-	"sync"
+	"strings"
 	"time"
+
+	"github.com/customerio/monitor/plugins"
+	"github.com/rcrowley/go-metrics"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 type Zookeeper struct {
-	start sync.Once
-	conn  *zk.Conn
-	paths []string
-	stats map[string]int
+	conn *zk.Conn
+
+	// Parallel arrays.
+	paths  []string
+	gauges []metrics.GaugeFloat64
 }
 
 func New(servers []string) *Zookeeper {
-
 	conn, _, err := zk.Connect(servers, time.Second*5)
 	if err != nil {
 		log.Println("zookeeper error:", err)
@@ -23,20 +26,19 @@ func New(servers []string) *Zookeeper {
 	}
 
 	return &Zookeeper{
-		conn:  conn,
-		paths: []string{},
-		stats: make(map[string]int),
+		conn:   conn,
+		paths:  nil,
+		gauges: nil,
 	}
 }
 
-func (z *Zookeeper) PathCounter(path string) *metric {
-	return newMetric(z, path)
+func (z *Zookeeper) Add(path string) {
+	z.paths = append(z.paths, path)
+	z.gauges = append(z.gauges, plugins.Gauge("zk."+strings.Trim(strings.Replace(path, "/", ".", -1), ".")))
 }
 
-func (z *Zookeeper) run(step time.Duration) {
-	z.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
-			z.collect()
-		}
-	})
+func (z *Zookeeper) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		z.collect()
+	}
 }

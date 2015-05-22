@@ -2,6 +2,7 @@ package system
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"regexp"
 	"strconv"
@@ -16,14 +17,21 @@ func pullFloat64(str string) float64 {
 }
 
 func (s *System) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("panic: System: %v\n", r)
+			s.clear()
+		}
+	}()
 
 	// Collect load average
 	data, err := ioutil.ReadFile("/proc/loadavg")
 	if err != nil {
 		panic(err)
 	}
+
 	load_avg, _ := strconv.ParseFloat(strings.Split(string(data), " ")[0], 64)
-	s.loadAvg = load_avg
+	s.gauges[loadAvgGauge].Update(load_avg)
 
 	// Now some memory stats
 	meminfo, err := ioutil.ReadFile("/proc/meminfo")
@@ -49,13 +57,13 @@ func (s *System) collect() {
 	}
 
 	if mem_total != 0.0 {
-		s.memUsage = mem_free / mem_total * 100
+		s.gauges[memUsageGauge].Update(mem_free / mem_total * 100)
 	} else {
-		s.memUsage = 0
+		s.gauges[memUsageGauge].Update(0)
 	}
 	if swap_total != 0.0 {
-		s.swapUsage = (swap_total - swap_free) / swap_total * 100
+		s.gauges[swapUsageGauge].Update((swap_total - swap_free) / swap_total * 100)
 	} else {
-		s.swapUsage = 0
+		s.gauges[swapUsageGauge].Update(0)
 	}
 }

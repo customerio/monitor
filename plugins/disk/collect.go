@@ -56,6 +56,11 @@ func (m mounts) get(name string) *mount {
 }
 
 func (d *Disk) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			d.clear()
+		}
+	}()
 
 	// Collect load average
 	usage, err := exec.Command("df").Output()
@@ -80,6 +85,6 @@ func (d *Disk) collect() {
 
 	drive := all_disks.get(d.filesystem)
 	if drive != nil {
-		d.usage = drive.usage()
+		d.usage.Update(drive.usage())
 	}
 }

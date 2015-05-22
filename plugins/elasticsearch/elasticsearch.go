@@ -1,68 +1,63 @@
 package elasticsearch
 
 import (
-	"sync"
 	"time"
+
+	"github.com/customerio/monitor/plugins"
+	"github.com/rcrowley/go-metrics"
 )
 
 const (
-	RED    = 0
-	YELLOW = 1
-	GREEN  = 2
+	statusRed    = 0
+	statusYellow = 1
+	statusGreen  = 2
+)
+
+const (
+	statusGauge = iota
+	nodesGauge
+	cpuGauge
+	memoryGauge
+	docsGauge
+	getsGauge
+	indexesGauge
+	searchesGauge
 )
 
 type Elasticsearch struct {
-	start            sync.Once
 	server           string
 	previousIndexes  int
 	previousGets     int
 	previousSearches int
-	stats            map[string]int
+
+	gauges []metrics.GaugeFloat64
 }
 
 func New(srv string) *Elasticsearch {
-	return &Elasticsearch{
+	e := &Elasticsearch{
 		server: srv,
-		stats:  make(map[string]int),
+		gauges: []metrics.GaugeFloat64{
+			statusGauge:   plugins.Gauge("elastic.cluster"),
+			nodesGauge:    plugins.Gauge("elastic.nodes"),
+			cpuGauge:      plugins.Gauge("elastic.cpu"),
+			memoryGauge:   plugins.Gauge("elastic.memory"),
+			docsGauge:     plugins.Gauge("elastic.docs"),
+			getsGauge:     plugins.Gauge("elastic.indexes"),
+			indexesGauge:  plugins.Gauge("elastic.gets"),
+			searchesGauge: plugins.Gauge("elastic.searches"),
+		},
+	}
+	return e
+}
+
+func (e *Elasticsearch) clear() {
+	for _, g := range e.gauges {
+		g.Update(0)
 	}
 }
 
-func (e *Elasticsearch) Status() *metric {
-	return newMetric(e, "status")
-}
-
-func (e *Elasticsearch) Nodes() *metric {
-	return newMetric(e, "nodes")
-}
-
-func (e *Elasticsearch) CPU() *metric {
-	return newMetric(e, "cpu")
-}
-
-func (e *Elasticsearch) Memory() *metric {
-	return newMetric(e, "memory")
-}
-
-func (e *Elasticsearch) Docs() *metric {
-	return newMetric(e, "docs")
-}
-
-func (e *Elasticsearch) Indexes() *metric {
-	return newMetric(e, "indexes")
-}
-
-func (e *Elasticsearch) Gets() *metric {
-	return newMetric(e, "gets")
-}
-
-func (e *Elasticsearch) Searches() *metric {
-	return newMetric(e, "searches")
-}
-
-func (e *Elasticsearch) run(step time.Duration) {
-	e.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
-			e.collect()
-		}
-	})
+func (e *Elasticsearch) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		e.collect()
+	}
 }

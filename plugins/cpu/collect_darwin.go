@@ -1,6 +1,7 @@
 package cpu
 
 import (
+	"fmt"
 	"time"
 	"unsafe"
 )
@@ -15,8 +16,12 @@ import (
 import "C"
 
 func (c *CPU) collect() {
-	c.lastUpdate = time.Now()
-	c.previous = c.current
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("panic: CPU: %v\n", r)
+			c.clear()
+		}
+	}()
 
 	// collect CPU stats for All cpus aggregated
 	var cpuinfo C.host_cpu_load_info_data_t
@@ -27,14 +32,17 @@ func (c *CPU) collect() {
 		C.host_info_t(unsafe.Pointer(&cpuinfo)), &count)
 
 	if ret != C.KERN_SUCCESS {
-		return
+		panic(fmt.Errorf("error: %d", ret))
 	}
 
-	c.current = map[string]int{
-		"user":   int(cpuinfo.cpu_ticks[C.CPU_STATE_USER]),
-		"nice":   int(cpuinfo.cpu_ticks[C.CPU_STATE_NICE]),
-		"system": int(cpuinfo.cpu_ticks[C.CPU_STATE_SYSTEM]),
-		"idle":   int(cpuinfo.cpu_ticks[C.CPU_STATE_IDLE]),
+	c.lastUpdate = time.Now()
+	c.previous = c.current
+
+	c.current = []int{
+		userGauge:   int(cpuinfo.cpu_ticks[C.CPU_STATE_USER]),
+		niceGauge:   int(cpuinfo.cpu_ticks[C.CPU_STATE_NICE]),
+		systemGauge: int(cpuinfo.cpu_ticks[C.CPU_STATE_SYSTEM]),
+		idleGauge:   int(cpuinfo.cpu_ticks[C.CPU_STATE_IDLE]),
 	}
 
 	if c.previous == nil {
@@ -42,5 +50,5 @@ func (c *CPU) collect() {
 	}
 
 	c.previousTotal = c.currentTotal
-	c.currentTotal = c.current["user"] + c.current["nice"] + c.current["system"] + c.current["idle"]
+	c.currentTotal = c.current[userGauge] + c.current[niceGauge] + c.current[systemGauge] + c.current[idleGauge]
 }

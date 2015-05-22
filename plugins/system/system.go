@@ -1,50 +1,40 @@
 package system
 
 import (
-	"sync"
 	"time"
+
+	"github.com/customerio/monitor/plugins"
+	"github.com/rcrowley/go-metrics"
+)
+
+const (
+	loadAvgGauge = iota
+	memUsageGauge
+	swapUsageGauge
 )
 
 type System struct {
-	start     sync.Once
-	loadAvg   float64
-	memUsage  float64
-	swapUsage float64
+	gauges []metrics.GaugeFloat64
 }
 
 func New() *System {
-	return &System{}
+	return &System{
+		gauges: []metrics.GaugeFloat64{
+			loadAvgGauge:   plugins.Gauge("system.load"),
+			memUsageGauge:  plugins.Gauge("system.mem_usage"),
+			swapUsageGauge: plugins.Gauge("system.swap_usage"),
+		},
+	}
 }
 
-func (s *System) LoadAverage() *metric {
-	return newMetric(s, "load_avg")
+func (s *System) clear() {
+	for _, g := range s.gauges {
+		g.Update(0)
+	}
 }
 
-func (s *System) MemUsage() *metric {
-	return newMetric(s, "mem_usage")
-}
-
-func (s *System) SwapUsage() *metric {
-	return newMetric(s, "swap_usage")
-}
-
-func (s *System) run(step time.Duration) {
-	s.start.Do(func() {
-		for _ = range time.NewTicker(step).C {
-			s.collect()
-		}
-	})
-}
-
-func (s *System) gather(name string) float64 {
-	switch name {
-	case "load_avg":
-		return s.loadAvg
-	case "mem_usage":
-		return s.memUsage
-	case "swap_usage":
-		return s.swapUsage
-	default:
-		return 0
+func (s *System) Run(step time.Duration) {
+	for _ = range time.Tick(step) {
+		s.collect()
 	}
 }

@@ -2,6 +2,7 @@ package system
 
 import (
 	"bufio"
+	"fmt"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -16,6 +17,12 @@ func pullFloat64(str string, index int) float64 {
 }
 
 func (s *System) collect() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("panic: System: %v\n", r)
+			s.clear()
+		}
+	}()
 
 	// Collect the load average from the uptime command
 	uptime, err := exec.Command("uptime").Output()
@@ -24,7 +31,7 @@ func (s *System) collect() {
 	}
 
 	load_avg, _ := strconv.ParseFloat(strings.Split(string(uptime), " ")[9], 64)
-	s.loadAvg = load_avg
+	s.gauges[loadAvgGauge].Update(load_avg)
 
 	// Now some memory stats
 	vmstat, err := exec.Command("vm_stat").Output()
@@ -47,7 +54,11 @@ func (s *System) collect() {
 		}
 	}
 
-	s.memUsage = pages_active / (pages_active + pages_free) * 100
-	s.swapUsage = swap
+	if (pages_active + pages_free) != 0.0 {
+		s.gauges[memUsageGauge].Update(pages_active / (pages_active + pages_free) * 100)
+	} else {
+		s.gauges[memUsageGauge].Update(0)
+	}
+	s.gauges[swapUsageGauge].Update(swap)
 
 }

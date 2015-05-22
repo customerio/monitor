@@ -1,20 +1,23 @@
 package main
 
 import (
-	"github.com/customerio/monitor"
 	"github.com/customerio/monitor/plugins/cpu"
+	"github.com/customerio/monitor/plugins/disk"
 	"github.com/customerio/monitor/plugins/elasticsearch"
+	"github.com/customerio/monitor/plugins/mysql"
 	"github.com/customerio/monitor/plugins/riak"
+	"github.com/customerio/monitor/plugins/system"
 	"github.com/rcrowley/go-metrics"
 	"github.com/rcrowley/go-metrics/librato"
 
-	"code.google.com/p/gcfg"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 	"time"
+
+	"code.google.com/p/gcfg"
 )
 
 var config_file = flag.String("config", "", "Configuration file path")
@@ -25,8 +28,11 @@ type Config struct {
 	}
 	Metrics struct {
 		Cpu           bool
+		System        bool
 		Riak          string
 		Elasticsearch string
+		Disk          string
+		MySQL         string
 	}
 	Options struct {
 		Interval string
@@ -81,28 +87,35 @@ func main() {
 
 	if cfg.Metrics.Cpu {
 		c := cpu.New()
-		go monitor.Report(c.User(), gauge("cpu.user"), time.Second)
-		go monitor.Report(c.System(), gauge("cpu.system"), time.Second)
-		go monitor.Report(c.Idle(), gauge("cpu.idle"), time.Second)
+		go c.Run(time.Second)
+	}
+
+	if cfg.Metrics.System {
+		s := system.New()
+		go s.Run(time.Second)
+	}
+
+	if cfg.Metrics.Disk != "" {
+		for i, diskname := range strings.Split(cfg.Metrics.Disk, ",") {
+			d := disk.New(i, diskname)
+			go d.Run(time.Second)
+		}
+	}
+
+	if cfg.Metrics.MySQL != "" {
+		m := mysql.New(cfg.Metrics.MySQL)
+		go m.Run(time.Second)
 	}
 
 	if cfg.Metrics.Riak != "" {
 		r := riak.New(cfg.Metrics.Riak)
-		go monitor.Report(r.MemUsage(), gauge("riak.mem_usage"), time.Second)
+		go r.Run(time.Second)
 	}
 
 	if cfg.Metrics.Elasticsearch != "" {
 		r := elasticsearch.New(cfg.Metrics.Elasticsearch)
-		go monitor.Report(r.Status(), gauge("elastic.cluster"), time.Second)
-		go monitor.Report(r.Nodes(), gauge("elastic.nodes"), time.Second)
-		go monitor.Report(r.CPU(), gauge("elastic.cpu"), time.Second)
-		go monitor.Report(r.Memory(), gauge("elastic.memory"), time.Second)
-		go monitor.Report(r.Docs(), gauge("elastic.docs"), time.Second)
-		go monitor.Report(r.Indexes(), gauge("elastic.indexes"), time.Second)
-		go monitor.Report(r.Gets(), gauge("elastic.gets"), time.Second)
-		go monitor.Report(r.Searches(), gauge("elastic.searches"), time.Second)
+		go r.Run(time.Second)
 	}
-
 	if cfg.Services.Librato != "" {
 		credentials := strings.Split(cfg.Services.Librato, ":")
 		if len(credentials) != 2 {
@@ -113,10 +126,4 @@ func main() {
 
 	metrics.Log(metrics.DefaultRegistry, duration, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
 
-}
-
-func gauge(name string) metrics.GaugeFloat64 {
-	m := metrics.NewGaugeFloat64()
-	metrics.Register(name, m)
-	return m
 }
