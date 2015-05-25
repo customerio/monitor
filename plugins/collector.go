@@ -19,6 +19,8 @@ func AddCollector(c Collector) {
 }
 
 func Collect(source, email, token string, duration time.Duration) {
+	Logger.Printf("Reporting the following metrics to librato\n%s\n", metrics.Summarize())
+
 	client := librato.NewClient(email, token)
 	collect(client, source, collectors)
 	for _ = range time.Tick(duration) {
