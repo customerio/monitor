@@ -6,7 +6,7 @@ Example:
     
     import (
     	"github.com/customerio/monitor/plugins/cpu"
-	"github.com/customerio/monitor/plugins"
+        "github.com/customerio/monitor/plugins"
     
     	"log"
     	"os"
@@ -14,9 +14,9 @@ Example:
     )
     
     func main() {
-	c := cpu.New()
-	plugins.AddCollector(c)
+        c := cpu.New()
+        plugins.AddCollector(c)
 
-	plugins.Collect("localhost", "", "", time.Second)
+        plugins.Collect("localhost", "", "", time.Second)
     }
 
