@@ -10,6 +10,7 @@ const (
 	usedCpuUserCounter
 	totalCommandsProcessedCounter
 	instantaneousOpsPerSecGauge
+	aofRewriteInProgressGauge
 )
 
 type Redis struct {
@@ -26,6 +27,7 @@ func New() *Redis {
 			usedCpuUserCounter:            metrics.NewCounter("redis.used_cpu_user"),
 			totalCommandsProcessedCounter: metrics.NewCounter("redis.total_commands_processed"),
 			instantaneousOpsPerSecGauge:   metrics.NewGauge("redis.instantaneous_ops_per_sec"),
+			aofRewriteInProgressGauge:     metrics.NewGauge("redis.aof_rewrite_in_progress"),
 		},
 	}
 }

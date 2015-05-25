@@ -19,6 +19,7 @@ func init() {
 		"used_cpu_user":             usedCpuUserCounter,
 		"total_commands_processed":  totalCommandsProcessedCounter,
 		"instantaneous_ops_per_sec": instantaneousOpsPerSecGauge,
+		"aof_rewrite_in_progress":   aofRewriteInProgressGauge,
 	}
 }
 
