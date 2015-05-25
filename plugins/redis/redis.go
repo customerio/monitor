@@ -6,8 +6,8 @@ const (
 	connectedClientsGauge = iota
 	usedMemoryGauge
 	usedMemoryPeakGauge
-	usedCpuSysGauge
-	usedCpuUserGauge
+	usedCpuSysCounter
+	usedCpuUserCounter
 	totalCommandsProcessedCounter
 	instantaneousOpsPerSecGauge
 )
@@ -22,8 +22,8 @@ func New() *Redis {
 			connectedClientsGauge:         metrics.NewGauge("redis.connected_clients"),
 			usedMemoryGauge:               metrics.NewGauge("redis.used_memory"),
 			usedMemoryPeakGauge:           metrics.NewGauge("redis.used_memory_peak"),
-			usedCpuSysGauge:               metrics.NewGauge("redis.used_cpu_sys"),
-			usedCpuUserGauge:              metrics.NewGauge("redis.used_cpu_user"),
+			usedCpuSysCounter:             metrics.NewCounter("redis.used_cpu_sys"),
+			usedCpuUserCounter:            metrics.NewCounter("redis.used_cpu_user"),
 			totalCommandsProcessedCounter: metrics.NewCounter("redis.total_commands_processed"),
 			instantaneousOpsPerSecGauge:   metrics.NewGauge("redis.instantaneous_ops_per_sec"),
 		},

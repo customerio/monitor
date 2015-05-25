@@ -29,7 +29,7 @@ type Config struct {
 	}
 	Metrics struct {
 		Cpu           bool
-		Redis         bool
+		Redis         string
 		System        bool
 		Riak          string
 		Elasticsearch string
@@ -79,7 +79,7 @@ func main() {
 		plugins.AddCollector(c)
 	}
 
-	if cfg.Metrics.Redis {
+	if cfg.Metrics.Redis != "" {
 		c := redis.New()
 		plugins.AddCollector(c)
 	}

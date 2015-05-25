@@ -15,8 +15,8 @@ func init() {
 		"connected_clients":         connectedClientsGauge,
 		"used_memory":               usedMemoryGauge,
 		"used_memory_peak":          usedMemoryPeakGauge,
-		"used_cpu_sys":              usedCpuSysGauge,
-		"used_cpu_user":             usedCpuUserGauge,
+		"used_cpu_sys":              usedCpuSysCounter,
+		"used_cpu_user":             usedCpuUserCounter,
 		"total_commands_processed":  totalCommandsProcessedCounter,
 		"instantaneous_ops_per_sec": instantaneousOpsPerSecGauge,
 	}
