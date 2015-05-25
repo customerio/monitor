@@ -2,16 +2,25 @@ package mysql
 
 import (
 	"database/sql"
-	"fmt"
 	"strconv"
 
+	"github.com/customerio/monitor/plugins"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func (m *MySQL) collect() {
+var updaterMap map[string]int
+
+func init() {
+	updaterMap = map[string]int{
+		"Queries":      queriesGauge,
+		"Slow_queries": slowGauge,
+	}
+}
+
+func (m *MySQL) Collect() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("panic: MySQL: %v\n", r)
+			plugins.Logger.Printf("panic: MySQL: %v\n", r)
 			m.clear()
 		}
 	}()
@@ -55,12 +64,8 @@ func (m *MySQL) collect() {
 
 		value, _ := strconv.Atoi(string(values[1]))
 
-		switch string(values[0]) {
-		case "Queries":
-			m.values[queriesGauge].set(value)
-		case "Slow_queries":
-			m.values[slowGauge].set(value)
+		if key, ok := updaterMap[string(values[0])]; ok {
+			m.updaters[key].Update(float64(value))
 		}
 	}
-
 }

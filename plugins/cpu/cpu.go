@@ -3,8 +3,7 @@ package cpu
 import (
 	"time"
 
-	"github.com/customerio/monitor/plugins"
-	"github.com/rcrowley/go-metrics"
+	"github.com/customerio/monitor/metrics"
 )
 
 const (
@@ -21,26 +20,23 @@ type CPU struct {
 	previousTotal int
 	lastUpdate    time.Time
 
-	gauges []metrics.GaugeFloat64
+	updaters []metrics.Updater
 }
 
 func New() *CPU {
 	return &CPU{
-		gauges: []metrics.GaugeFloat64{
-			userGauge:   plugins.Gauge("cpu.user"),
-			systemGauge: plugins.Gauge("cpu.system"),
-			idleGauge:   plugins.Gauge("cpu.idle"),
+		updaters: []metrics.Updater{
+			userGauge:   metrics.NewGauge("cpu.user"),
+			systemGauge: metrics.NewGauge("cpu.system"),
+			idleGauge:   metrics.NewGauge("cpu.idle"),
 		},
 	}
 }
 
-func (c *CPU) Run(step time.Duration) {
-	for _ = range time.Tick(step) {
-		c.collect()
-
-		for _, i := range []int{userGauge, systemGauge, idleGauge} {
-			c.gauges[i].Update(c.rate(i))
-		}
+func (c *CPU) Collect() {
+	c.collect()
+	for _, i := range []int{userGauge, systemGauge, idleGauge} {
+		c.updaters[i].Update(c.rate(i))
 	}
 }
 

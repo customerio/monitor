@@ -1,11 +1,6 @@
 package system
 
-import (
-	"time"
-
-	"github.com/customerio/monitor/plugins"
-	"github.com/rcrowley/go-metrics"
-)
+import "github.com/customerio/monitor/metrics"
 
 const (
 	loadAvgGauge = iota
@@ -14,27 +9,25 @@ const (
 )
 
 type System struct {
-	gauges []metrics.GaugeFloat64
+	updaters []metrics.Updater
 }
 
 func New() *System {
 	return &System{
-		gauges: []metrics.GaugeFloat64{
-			loadAvgGauge:   plugins.Gauge("system.load"),
-			memUsageGauge:  plugins.Gauge("system.mem_usage"),
-			swapUsageGauge: plugins.Gauge("system.swap_usage"),
+		updaters: []metrics.Updater{
+			loadAvgGauge:   metrics.NewGauge("system.load"),
+			memUsageGauge:  metrics.NewGauge("system.mem_usage"),
+			swapUsageGauge: metrics.NewGauge("system.swap_usage"),
 		},
 	}
 }
 
 func (s *System) clear() {
-	for _, g := range s.gauges {
+	for _, g := range s.updaters {
 		g.Update(0)
 	}
 }
 
-func (s *System) Run(step time.Duration) {
-	for _ = range time.Tick(step) {
-		s.collect()
-	}
+func (s *System) Collect() {
+	s.collect()
 }

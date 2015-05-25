@@ -1,11 +1,6 @@
 package foundationdb
 
-import (
-	"time"
-
-	"github.com/customerio/monitor/plugins"
-	"github.com/rcrowley/go-metrics"
-)
+import "github.com/customerio/monitor/metrics"
 
 const (
 	// instance stats
@@ -24,32 +19,26 @@ const (
 type FoundationDB struct {
 	port int
 
-	gauges []metrics.GaugeFloat64
+	updaters []metrics.Updater
 }
 
 func New(port int) *FoundationDB {
 	return &FoundationDB{port: port,
-		gauges: []metrics.GaugeFloat64{
-			diskioGauge:          plugins.Gauge("fdb.diskio"),
-			trafficGauge:         plugins.Gauge("fdb.traffic"),
-			cpuGauge:             plugins.Gauge("fdb.cpu"),
-			ramGauge:             plugins.Gauge("fdb.ram"),
-			readRateGauge:        plugins.Gauge("fdb.rate.read"),
-			writeRateGauge:       plugins.Gauge("fdb.rate.write"),
-			transactionRateGauge: plugins.Gauge("fdb.rate.transaction"),
-			conflictRateGauge:    plugins.Gauge("fdb.rate.conflict"),
+		updaters: []metrics.Updater{
+			diskioGauge:          metrics.NewGauge("fdb.diskio"),
+			trafficGauge:         metrics.NewGauge("fdb.traffic"),
+			cpuGauge:             metrics.NewGauge("fdb.cpu"),
+			ramGauge:             metrics.NewGauge("fdb.ram"),
+			readRateGauge:        metrics.NewGauge("fdb.rate.read"),
+			writeRateGauge:       metrics.NewGauge("fdb.rate.write"),
+			transactionRateGauge: metrics.NewGauge("fdb.rate.transaction"),
+			conflictRateGauge:    metrics.NewGauge("fdb.rate.conflict"),
 		},
 	}
 }
 
 func (f *FoundationDB) clear() {
-	for _, v := range f.gauges {
+	for _, v := range f.updaters {
 		v.Update(0)
-	}
-}
-
-func (f *FoundationDB) Run(step time.Duration) {
-	for _ = range time.Tick(step) {
-		f.collect()
 	}
 }

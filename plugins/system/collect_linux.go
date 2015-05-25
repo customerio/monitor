@@ -2,11 +2,12 @@ package system
 
 import (
 	"bufio"
-	"fmt"
 	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/customerio/monitor/plugins"
 )
 
 var splitter = regexp.MustCompile(" +")
@@ -19,7 +20,7 @@ func pullFloat64(str string) float64 {
 func (s *System) collect() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("panic: System: %v\n", r)
+			plugins.Logger.Printf("panic: System: %v\n", r)
 			s.clear()
 		}
 	}()
@@ -31,7 +32,7 @@ func (s *System) collect() {
 	}
 
 	load_avg, _ := strconv.ParseFloat(strings.Split(string(data), " ")[0], 64)
-	s.gauges[loadAvgGauge].Update(load_avg)
+	s.updaters[loadAvgGauge].Update(load_avg)
 
 	// Now some memory stats
 	meminfo, err := ioutil.ReadFile("/proc/meminfo")
@@ -57,13 +58,13 @@ func (s *System) collect() {
 	}
 
 	if mem_total != 0.0 {
-		s.gauges[memUsageGauge].Update(mem_free / mem_total * 100)
+		s.updaters[memUsageGauge].Update(mem_free / mem_total * 100)
 	} else {
-		s.gauges[memUsageGauge].Update(0)
+		s.updaters[memUsageGauge].Update(0)
 	}
 	if swap_total != 0.0 {
-		s.gauges[swapUsageGauge].Update((swap_total - swap_free) / swap_total * 100)
+		s.updaters[swapUsageGauge].Update((swap_total - swap_free) / swap_total * 100)
 	} else {
-		s.gauges[swapUsageGauge].Update(0)
+		s.updaters[swapUsageGauge].Update(0)
 	}
 }

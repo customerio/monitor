@@ -1,11 +1,6 @@
 package elasticsearch
 
-import (
-	"time"
-
-	"github.com/customerio/monitor/plugins"
-	"github.com/rcrowley/go-metrics"
-)
+import "github.com/customerio/monitor/metrics"
 
 const (
 	statusRed    = 0
@@ -30,34 +25,28 @@ type Elasticsearch struct {
 	previousGets     int
 	previousSearches int
 
-	gauges []metrics.GaugeFloat64
+	updaters []metrics.Updater
 }
 
 func New(srv string) *Elasticsearch {
 	e := &Elasticsearch{
 		server: srv,
-		gauges: []metrics.GaugeFloat64{
-			statusGauge:   plugins.Gauge("elastic.cluster"),
-			nodesGauge:    plugins.Gauge("elastic.nodes"),
-			cpuGauge:      plugins.Gauge("elastic.cpu"),
-			memoryGauge:   plugins.Gauge("elastic.memory"),
-			docsGauge:     plugins.Gauge("elastic.docs"),
-			indexesGauge:  plugins.Gauge("elastic.indexes"),
-			getsGauge:     plugins.Gauge("elastic.gets"),
-			searchesGauge: plugins.Gauge("elastic.searches"),
+		updaters: []metrics.Updater{
+			statusGauge:   metrics.NewGauge("elastic.cluster"),
+			nodesGauge:    metrics.NewGauge("elastic.nodes"),
+			cpuGauge:      metrics.NewGauge("elastic.cpu"),
+			memoryGauge:   metrics.NewGauge("elastic.memory"),
+			docsGauge:     metrics.NewGauge("elastic.docs"),
+			indexesGauge:  metrics.NewGauge("elastic.indexes"),
+			getsGauge:     metrics.NewGauge("elastic.gets"),
+			searchesGauge: metrics.NewGauge("elastic.searches"),
 		},
 	}
 	return e
 }
 
 func (e *Elasticsearch) clear() {
-	for _, g := range e.gauges {
+	for _, g := range e.updaters {
 		g.Update(0)
-	}
-}
-
-func (e *Elasticsearch) Run(step time.Duration) {
-	for _ = range time.Tick(step) {
-		e.collect()
 	}
 }

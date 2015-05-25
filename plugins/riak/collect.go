@@ -1,11 +1,11 @@
 package riak
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/bitly/go-simplejson"
+	"github.com/customerio/monitor/plugins"
 )
 
 func grabInt(json *simplejson.Json, metric string) float64 {
@@ -16,10 +16,10 @@ func grabInt(json *simplejson.Json, metric string) float64 {
 	return float64(m)
 }
 
-func (r *Riak) collect() {
+func (r *Riak) Collect() {
 	defer func() {
 		if rr := recover(); rr != nil {
-			fmt.Printf("panic: Riak: %v\n", rr)
+			plugins.Logger.Printf("panic: Riak: %v\n", rr)
 			r.clear()
 		}
 	}()
@@ -39,8 +39,8 @@ func (r *Riak) collect() {
 		panic(err)
 	}
 
-	r.gauges[memoryGauge].Update(grabInt(json, "memory_total"))
-	r.gauges[getsGauge].Update(grabInt(json, "vnode_gets"))
-	r.gauges[putsGauge].Update(grabInt(json, "vnode_puts"))
-	r.gauges[indexGetsGauge].Update(grabInt(json, "vnode_index_reads"))
+	r.updaters[memoryGauge].Update(grabInt(json, "memory_total"))
+	r.updaters[getsGauge].Update(grabInt(json, "vnode_gets"))
+	r.updaters[putsGauge].Update(grabInt(json, "vnode_puts"))
+	r.updaters[indexGetsGauge].Update(grabInt(json, "vnode_index_reads"))
 }

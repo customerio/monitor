@@ -2,11 +2,12 @@ package system
 
 import (
 	"bufio"
-	"fmt"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/customerio/monitor/plugins"
 )
 
 var splitter = regexp.MustCompile(" +")
@@ -19,7 +20,7 @@ func pullFloat64(str string, index int) float64 {
 func (s *System) collect() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("panic: System: %v\n", r)
+			plugins.Logger.Printf("panic: System: %v\n", r)
 			s.clear()
 		}
 	}()
@@ -31,7 +32,7 @@ func (s *System) collect() {
 	}
 
 	load_avg, _ := strconv.ParseFloat(strings.Split(string(uptime), " ")[9], 64)
-	s.gauges[loadAvgGauge].Update(load_avg)
+	s.updaters[loadAvgGauge].Update(load_avg)
 
 	// Now some memory stats
 	vmstat, err := exec.Command("vm_stat").Output()
@@ -55,10 +56,10 @@ func (s *System) collect() {
 	}
 
 	if (pages_active + pages_free) != 0.0 {
-		s.gauges[memUsageGauge].Update(pages_active / (pages_active + pages_free) * 100)
+		s.updaters[memUsageGauge].Update(pages_active / (pages_active + pages_free) * 100)
 	} else {
-		s.gauges[memUsageGauge].Update(0)
+		s.updaters[memUsageGauge].Update(0)
 	}
-	s.gauges[swapUsageGauge].Update(swap)
+	s.updaters[swapUsageGauge].Update(swap)
 
 }

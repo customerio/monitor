@@ -1,19 +1,20 @@
 package main
 
 import (
+	"net/http"
+	"os"
+
+	"github.com/customerio/monitor/plugins"
 	"github.com/customerio/monitor/plugins/cpu"
 	"github.com/customerio/monitor/plugins/disk"
 	"github.com/customerio/monitor/plugins/elasticsearch"
 	"github.com/customerio/monitor/plugins/mysql"
+	"github.com/customerio/monitor/plugins/redis"
 	"github.com/customerio/monitor/plugins/riak"
 	"github.com/customerio/monitor/plugins/system"
-	"github.com/rcrowley/go-metrics"
-	"github.com/rcrowley/go-metrics/librato"
 
 	"flag"
 	"fmt"
-	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ type Config struct {
 	}
 	Metrics struct {
 		Cpu           bool
+		Redis         bool
 		System        bool
 		Riak          string
 		Elasticsearch string
@@ -37,26 +39,8 @@ type Config struct {
 	Options struct {
 		Interval string
 		Hostname string
+		Logger   string
 	}
-}
-
-func setup_librato(interval time.Duration, owner string, token string) {
-
-	host, err := os.Hostname()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Binding to librato: %v (%v)", owner, host)
-
-	go librato.Librato(metrics.DefaultRegistry,
-		interval,      // interval
-		owner,         // account owner email address
-		token,         // Librato API token
-		host,          // source
-		[]float64{95}, // precentiles to send
-		interval,      // time unit
-	)
 }
 
 func main() {
@@ -80,6 +64,11 @@ func main() {
 		cfg.Options.Interval = "1s"
 	}
 
+	// We don't want long waits on http connections.
+	http.DefaultClient.Timeout = time.Second * 5
+
+	plugins.InitializeLogger(cfg.Options.Logger, "gomon")
+
 	duration, err := time.ParseDuration(cfg.Options.Interval)
 	if err != nil {
 		panic(err)
@@ -87,43 +76,54 @@ func main() {
 
 	if cfg.Metrics.Cpu {
 		c := cpu.New()
-		go c.Run(time.Second)
+		plugins.AddCollector(c)
+	}
+
+	if cfg.Metrics.Redis {
+		c := redis.New()
+		plugins.AddCollector(c)
 	}
 
 	if cfg.Metrics.System {
 		s := system.New()
-		go s.Run(time.Second)
+		plugins.AddCollector(s)
 	}
 
 	if cfg.Metrics.Disk != "" {
 		for i, diskname := range strings.Split(cfg.Metrics.Disk, ",") {
 			d := disk.New(i, diskname)
-			go d.Run(time.Second)
+			plugins.AddCollector(d)
 		}
 	}
 
 	if cfg.Metrics.MySQL != "" {
 		m := mysql.New(cfg.Metrics.MySQL)
-		go m.Run(time.Second)
+		plugins.AddCollector(m)
 	}
 
 	if cfg.Metrics.Riak != "" {
 		r := riak.New(cfg.Metrics.Riak)
-		go r.Run(time.Second)
+		plugins.AddCollector(r)
 	}
 
 	if cfg.Metrics.Elasticsearch != "" {
 		r := elasticsearch.New(cfg.Metrics.Elasticsearch)
-		go r.Run(time.Second)
+		plugins.AddCollector(r)
 	}
+
+	var email, token string
 	if cfg.Services.Librato != "" {
 		credentials := strings.Split(cfg.Services.Librato, ":")
 		if len(credentials) != 2 {
 			panic(fmt.Errorf("Bad librato credentials expected: EMAIL:TOKEN, got: %v", cfg.Services.Librato))
 		}
-		setup_librato(duration, credentials[0], credentials[1])
+		email = credentials[0]
+		token = credentials[1]
+	}
+	host, err := os.Hostname()
+	if err != nil {
+		panic(err)
 	}
 
-	metrics.Log(metrics.DefaultRegistry, duration, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
-
+	plugins.Collect(host, email, token, duration)
 }

@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/customerio/monitor/plugins"
 )
 
 type mount struct {
@@ -55,9 +57,10 @@ func (m mounts) get(name string) *mount {
 
 }
 
-func (d *Disk) collect() {
+func (d *Disk) Collect() {
 	defer func() {
 		if r := recover(); r != nil {
+			plugins.Logger.Printf("panic: Disk: %v\n", r)
 			d.clear()
 		}
 	}()

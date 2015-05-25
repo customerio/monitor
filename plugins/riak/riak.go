@@ -1,11 +1,6 @@
 package riak
 
-import (
-	"time"
-
-	"github.com/customerio/monitor/plugins"
-	"github.com/rcrowley/go-metrics"
-)
+import "github.com/customerio/monitor/metrics"
 
 const (
 	memoryGauge = iota
@@ -15,29 +10,23 @@ const (
 )
 
 type Riak struct {
-	server string
-	gauges []metrics.GaugeFloat64
+	server   string
+	updaters []metrics.Updater
 }
 
 func New(srv string) *Riak {
 	return &Riak{server: srv,
-		gauges: []metrics.GaugeFloat64{
-			memoryGauge:    plugins.Gauge("riak.mem_usage"),
-			getsGauge:      plugins.Gauge("riak.gets"),
-			putsGauge:      plugins.Gauge("riak.puts"),
-			indexGetsGauge: plugins.Gauge("riak.index_gets"),
+		updaters: []metrics.Updater{
+			memoryGauge:    metrics.NewGauge("riak.mem_usage"),
+			getsGauge:      metrics.NewGauge("riak.gets"),
+			putsGauge:      metrics.NewGauge("riak.puts"),
+			indexGetsGauge: metrics.NewGauge("riak.index_gets"),
 		},
 	}
 }
 
 func (r *Riak) clear() {
-	for _, g := range r.gauges {
+	for _, g := range r.updaters {
 		g.Update(0)
-	}
-}
-
-func (r *Riak) Run(step time.Duration) {
-	for _ = range time.Tick(step) {
-		r.collect()
 	}
 }

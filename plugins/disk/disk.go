@@ -2,30 +2,22 @@ package disk
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/customerio/monitor/plugins"
-	"github.com/rcrowley/go-metrics"
+	"github.com/customerio/monitor/metrics"
 )
 
 type Disk struct {
 	filesystem string
-	usage      metrics.GaugeFloat64
+	usage      metrics.Updater
 }
 
 func New(i int, fs string) *Disk {
 	return &Disk{
 		filesystem: fs,
-		usage:      plugins.Gauge(fmt.Sprintf("disk.%d.usage", i)),
+		usage:      metrics.NewGauge(fmt.Sprintf("disk.%d.usage", i)),
 	}
 }
 
 func (d *Disk) clear() {
 	d.usage.Update(0)
-}
-
-func (d *Disk) Run(step time.Duration) {
-	for _ = range time.Tick(step) {
-		d.collect()
-	}
 }

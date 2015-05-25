@@ -2,17 +2,17 @@ package elasticsearch
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/bitly/go-simplejson"
+	"github.com/customerio/monitor/plugins"
 )
 
-func (e *Elasticsearch) collect() {
+func (e *Elasticsearch) Collect() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("panic: Elasticsearch: %v\n", r)
+			plugins.Logger.Printf("panic: Elasticsearch: %v\n", r)
 			e.clear()
 		}
 	}()
@@ -54,16 +54,16 @@ func (e *Elasticsearch) collect() {
 			j, _ := json.Marshal(data)
 			node, _ := simplejson.NewJson(j)
 
-			e.gauges[cpuGauge].Update(float64(node.GetPath("process", "cpu", "percent").MustInt()))
-			e.gauges[memoryGauge].Update(float64(node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()))
+			e.updaters[cpuGauge].Update(float64(node.GetPath("process", "cpu", "percent").MustInt()))
+			e.updaters[memoryGauge].Update(float64(node.GetPath("jvm", "mem", "heap_used_in_bytes").MustInt()))
 
 			indexes := node.GetPath("indices", "indexing", "index_total").MustInt()
 			gets := node.GetPath("indices", "get", "total").MustInt()
 			searches := node.GetPath("indices", "search", "query_total").MustInt()
 
-			e.gauges[indexesGauge].Update(float64(indexes - e.previousIndexes))
-			e.gauges[getsGauge].Update(float64(gets - e.previousGets))
-			e.gauges[searchesGauge].Update(float64(searches - e.previousSearches))
+			e.updaters[indexesGauge].Update(float64(indexes - e.previousIndexes))
+			e.updaters[getsGauge].Update(float64(gets - e.previousGets))
+			e.updaters[searchesGauge].Update(float64(searches - e.previousSearches))
 
 			e.previousIndexes = indexes
 			e.previousGets = gets
@@ -73,16 +73,16 @@ func (e *Elasticsearch) collect() {
 		}
 	}
 
-	e.gauges[nodesGauge].Update(float64(cjson.GetPath("nodes", "count", "total").MustInt()))
-	e.gauges[docsGauge].Update(float64(cjson.GetPath("indices", "docs", "count").MustInt()))
+	e.updaters[nodesGauge].Update(float64(cjson.GetPath("nodes", "count", "total").MustInt()))
+	e.updaters[docsGauge].Update(float64(cjson.GetPath("indices", "docs", "count").MustInt()))
 
 	status := cjson.Get("status").MustString()
 
 	if status == "green" {
-		e.gauges[statusGauge].Update(float64(statusGreen))
+		e.updaters[statusGauge].Update(float64(statusGreen))
 	} else if status == "yellow" {
-		e.gauges[statusGauge].Update(float64(statusYellow))
+		e.updaters[statusGauge].Update(float64(statusYellow))
 	} else {
-		e.gauges[statusGauge].Update(float64(statusRed))
+		e.updaters[statusGauge].Update(float64(statusRed))
 	}
 }

@@ -5,8 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/customerio/monitor/plugins"
-	"github.com/rcrowley/go-metrics"
+	"github.com/customerio/monitor/metrics"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -14,8 +13,8 @@ type Zookeeper struct {
 	conn *zk.Conn
 
 	// Parallel arrays.
-	paths  []string
-	gauges []metrics.GaugeFloat64
+	paths    []string
+	updaters []metrics.Updater
 }
 
 func New(servers []string) *Zookeeper {
@@ -26,19 +25,13 @@ func New(servers []string) *Zookeeper {
 	}
 
 	return &Zookeeper{
-		conn:   conn,
-		paths:  nil,
-		gauges: nil,
+		conn:     conn,
+		paths:    nil,
+		updaters: nil,
 	}
 }
 
 func (z *Zookeeper) Add(path string) {
 	z.paths = append(z.paths, path)
-	z.gauges = append(z.gauges, plugins.Gauge("zk."+strings.Trim(strings.Replace(path, "/", ".", -1), ".")))
-}
-
-func (z *Zookeeper) Run(step time.Duration) {
-	for _ = range time.Tick(step) {
-		z.collect()
-	}
+	z.updaters = append(z.updaters, metrics.NewGauge("zk."+strings.Trim(strings.Replace(path, "/", ".", -1), ".")))
 }

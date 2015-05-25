@@ -1,15 +1,14 @@
 package zookeeper
 
-import "fmt"
+import "github.com/customerio/monitor/plugins"
 
-func (z *Zookeeper) collect() {
-
+func (z *Zookeeper) Collect() {
 	for i, path := range z.paths {
 		if children, _, err := z.conn.Children(path); err == nil {
-			z.gauges[i].Update(float64(len(children)))
+			z.updaters[i].Update(float64(len(children)))
 		} else {
-			fmt.Printf("panic: Zookeeper: %v\n", err)
-			z.gauges[i].Update(0)
+			plugins.Logger.Printf("panic: Zookeeper: %v\n", err)
+			z.updaters[i].Update(0)
 		}
 	}
 }
