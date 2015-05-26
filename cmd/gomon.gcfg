@@ -16,6 +16,8 @@
 cpu
 system
 disk=largest,/dev/disk1
+write=tmp:/tmp/foo
+write=slash:/foo
 
 ## Redis stats.
 redis=localhost

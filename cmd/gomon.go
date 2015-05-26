@@ -12,6 +12,8 @@ import (
 	"github.com/customerio/monitor/plugins/redis"
 	"github.com/customerio/monitor/plugins/riak"
 	"github.com/customerio/monitor/plugins/system"
+	"github.com/customerio/monitor/plugins/write"
+	"github.com/customerio/monitor/plugins/zookeeper"
 
 	"flag"
 	"fmt"
@@ -29,12 +31,14 @@ type Config struct {
 	}
 	Metrics struct {
 		Cpu           bool
-		Redis         string
-		System        bool
 		Riak          string
-		Elasticsearch string
-		Disk          string
+		Redis         string
 		MySQL         string
+		Zookeeper     []string
+		Write         []string
+		Elasticsearch string
+		System        bool
+		Disk          string
 	}
 	Options struct {
 		Interval string
@@ -109,6 +113,22 @@ func main() {
 	if cfg.Metrics.Elasticsearch != "" {
 		r := elasticsearch.New(cfg.Metrics.Elasticsearch)
 		plugins.AddCollector(r)
+	}
+
+	if len(cfg.Metrics.Zookeeper) > 0 {
+		z := zookeeper.New([]string{"localhost"})
+		for _, m := range cfg.Metrics.Zookeeper {
+			z.Add(m)
+		}
+		plugins.AddCollector(z)
+	}
+
+	if len(cfg.Metrics.Write) > 0 {
+		z := write.New()
+		for _, m := range cfg.Metrics.Write {
+			z.Add(m)
+		}
+		plugins.AddCollector(z)
 	}
 
 	var email, token string
