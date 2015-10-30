@@ -8,6 +8,7 @@ import (
 	"github.com/customerio/monitor/plugins/cpu"
 	"github.com/customerio/monitor/plugins/disk"
 	"github.com/customerio/monitor/plugins/elasticsearch"
+	"github.com/customerio/monitor/plugins/etcd"
 	"github.com/customerio/monitor/plugins/mysql"
 	"github.com/customerio/monitor/plugins/redis"
 	"github.com/customerio/monitor/plugins/riak"
@@ -28,6 +29,7 @@ var config_file = flag.String("config", "", "Configuration file path")
 type Config struct {
 	Services struct {
 		Librato string
+		Slack   string
 	}
 	Metrics struct {
 		Cpu           bool
@@ -39,6 +41,7 @@ type Config struct {
 		Elasticsearch string
 		System        bool
 		Disk          string
+		Etcd          string
 	}
 	Options struct {
 		Interval string
@@ -102,6 +105,11 @@ func main() {
 
 	if cfg.Metrics.MySQL != "" {
 		m := mysql.New(cfg.Metrics.MySQL)
+		plugins.AddCollector(m)
+	}
+
+	if cfg.Metrics.Etcd != "" {
+		m := etcd.New(cfg.Services.Slack, cfg.Metrics.Etcd)
 		plugins.AddCollector(m)
 	}
 
