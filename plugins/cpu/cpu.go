@@ -33,10 +33,13 @@ func New() *CPU {
 	}
 }
 
-func (c *CPU) Collect() {
+func (c *CPU) Collect(b *metrics.Batch) {
 	c.collect()
 	for _, i := range []int{userGauge, systemGauge, idleGauge} {
 		c.updaters[i].Update(c.rate(i))
+	}
+	for _, u := range c.updaters {
+		u.Fill(b)
 	}
 }
 

@@ -25,9 +25,7 @@ func New(servers []string) *Zookeeper {
 	}
 
 	return &Zookeeper{
-		conn:     conn,
-		paths:    nil,
-		updaters: nil,
+		conn: conn,
 	}
 }
 

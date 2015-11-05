@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/customerio/monitor/metrics"
 	"github.com/customerio/monitor/plugins"
 )
 
@@ -56,8 +57,7 @@ func (m mounts) get(name string) *mount {
 	return nil
 
 }
-
-func (d *Disk) Collect() {
+func (d *Disk) collect() {
 	defer func() {
 		if r := recover(); r != nil {
 			plugins.Logger.Printf("panic: Disk: %v\n", r)
@@ -90,4 +90,10 @@ func (d *Disk) Collect() {
 	if drive != nil {
 		d.usage.Update(drive.usage())
 	}
+}
+
+func (d *Disk) Collect(b *metrics.Batch) {
+	d.collect()
+
+	d.usage.Fill(b)
 }

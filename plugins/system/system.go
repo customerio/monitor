@@ -28,6 +28,9 @@ func (s *System) clear() {
 	}
 }
 
-func (s *System) Collect() {
+func (s *System) Collect(b *metrics.Batch) {
 	s.collect()
+	for _, u := range s.updaters {
+		u.Fill(b)
+	}
 }

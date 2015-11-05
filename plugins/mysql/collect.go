@@ -4,20 +4,25 @@ import (
 	"database/sql"
 	"strconv"
 
+	"github.com/customerio/monitor/metrics"
 	"github.com/customerio/monitor/plugins"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var updaterMap map[string]int
+var updaterMap = map[string]int{
+	"Queries":      queriesGauge,
+	"Slow_queries": slowGauge,
+}
 
-func init() {
-	updaterMap = map[string]int{
-		"Queries":      queriesGauge,
-		"Slow_queries": slowGauge,
+func (f *MySQL) Collect(b *metrics.Batch) {
+	f.collect()
+
+	for _, u := range f.updaters {
+		u.Fill(b)
 	}
 }
 
-func (m *MySQL) Collect() {
+func (m *MySQL) collect() {
 	defer func() {
 		if r := recover(); r != nil {
 			plugins.Logger.Printf("panic: MySQL: %v\n", r)

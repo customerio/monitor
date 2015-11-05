@@ -6,10 +6,11 @@ import (
 	"net/http"
 
 	"github.com/bitly/go-simplejson"
+	"github.com/customerio/monitor/metrics"
 	"github.com/customerio/monitor/plugins"
 )
 
-func (e *Elasticsearch) Collect() {
+func (e *Elasticsearch) collect() {
 	defer func() {
 		if r := recover(); r != nil {
 			plugins.Logger.Printf("panic: Elasticsearch: %v\n", r)
@@ -84,5 +85,13 @@ func (e *Elasticsearch) Collect() {
 		e.updaters[statusGauge].Update(float64(statusYellow))
 	} else {
 		e.updaters[statusGauge].Update(float64(statusRed))
+	}
+}
+
+func (e *Elasticsearch) Collect(b *metrics.Batch) {
+	e.collect()
+
+	for _, u := range e.updaters {
+		u.Fill(b)
 	}
 }

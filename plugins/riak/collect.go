@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/bitly/go-simplejson"
+	"github.com/customerio/monitor/metrics"
 	"github.com/customerio/monitor/plugins"
 )
 
@@ -16,7 +17,15 @@ func grabInt(json *simplejson.Json, metric string) float64 {
 	return float64(m)
 }
 
-func (r *Riak) Collect() {
+func (f *Riak) Collect(b *metrics.Batch) {
+	f.collect()
+
+	for _, u := range f.updaters {
+		u.Fill(b)
+	}
+}
+
+func (r *Riak) collect() {
 	defer func() {
 		if rr := recover(); rr != nil {
 			plugins.Logger.Printf("panic: Riak: %v\n", rr)

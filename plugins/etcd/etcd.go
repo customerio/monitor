@@ -15,6 +15,8 @@ import (
 	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 
 	etcd "github.com/coreos/etcd/client"
+
+	"github.com/customerio/monitor/metrics"
 )
 
 type Etcd struct {
@@ -80,7 +82,7 @@ func New(slack string, u string) *Etcd {
 	}
 }
 
-func (c *Etcd) Collect() {
+func (c *Etcd) Collect(batch *metrics.Batch) {
 	mi := etcd.NewMembersAPI(c.client)
 	ms, err := mi.List(context.TODO())
 

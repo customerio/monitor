@@ -5,25 +5,29 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/customerio/monitor/metrics"
 	"github.com/customerio/monitor/plugins"
 )
 
-var updaterMap map[string]int
-
-func init() {
-	updaterMap = map[string]int{
-		"connected_clients":         connectedClientsGauge,
-		"used_memory":               usedMemoryGauge,
-		"used_memory_peak":          usedMemoryPeakGauge,
-		"used_cpu_sys":              usedCpuSysCounter,
-		"used_cpu_user":             usedCpuUserCounter,
-		"total_commands_processed":  totalCommandsProcessedCounter,
-		"instantaneous_ops_per_sec": instantaneousOpsPerSecGauge,
-		"aof_rewrite_in_progress":   aofRewriteInProgressGauge,
-	}
+var updaterMap = map[string]int{
+	"connected_clients":         connectedClientsGauge,
+	"used_memory":               usedMemoryGauge,
+	"used_memory_peak":          usedMemoryPeakGauge,
+	"used_cpu_sys":              usedCpuSysCounter,
+	"used_cpu_user":             usedCpuUserCounter,
+	"total_commands_processed":  totalCommandsProcessedCounter,
+	"instantaneous_ops_per_sec": instantaneousOpsPerSecGauge,
+	"aof_rewrite_in_progress":   aofRewriteInProgressGauge,
 }
 
-func (f *Redis) Collect() {
+func (f *Redis) Collect(b *metrics.Batch) {
+	f.collect()
+
+	for _, u := range f.updaters {
+		u.Fill(b)
+	}
+}
+func (f *Redis) collect() {
 	defer func() {
 		if r := recover(); r != nil {
 			plugins.Logger.Printf("panic: Redis: %v\n", r)

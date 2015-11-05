@@ -3,10 +3,18 @@ package write
 import (
 	"os"
 
+	"github.com/customerio/monitor/metrics"
 	"github.com/customerio/monitor/plugins"
 )
 
-func (z *Write) Collect() {
+func (z *Write) Collect(b *metrics.Batch) {
+	z.collect()
+	for _, u := range z.updaters {
+		u.Fill(b)
+	}
+}
+
+func (z *Write) collect() {
 	for i, path := range z.paths {
 		status := 1
 		file, err := os.Create(path)

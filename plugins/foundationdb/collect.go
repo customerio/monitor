@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+
+	"github.com/customerio/monitor/metrics"
 )
 
 // 127.0.0.1:4689         (  1% cpu;   6% machine; 0.000 Gbps;  0% disk IO; 2.4 GB / 11.1 GB RAM  )
@@ -14,7 +16,14 @@ import (
 var detail_regex = regexp.MustCompile(`([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ \(]+ ([0-9]+)% cpu; *([0-9]+)% machine; *([0-9\.]+) Gbps; *([0-9]+)% disk IO; *([0-9\.]+) GB +/ *([0-9\.]+)`)
 var workload_regex = regexp.MustCompile(` +([a-zA-Z]+) rate +- +([0-9]+) Hz`)
 
-func (f *FoundationDB) Collect() {
+func (f *FoundationDB) Collect(b *metrics.Batch) {
+	f.collect()
+
+	for _, u := range f.updaters {
+		u.Fill(b)
+	}
+}
+func (f *FoundationDB) collect() {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("panic: FoundationDB: %v\n", r)
