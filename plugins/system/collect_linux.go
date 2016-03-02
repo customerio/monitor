@@ -42,7 +42,7 @@ func (s *System) collect() {
 
 	scanner := bufio.NewScanner(strings.NewReader(string(meminfo)))
 
-	var mem_total, mem_free, swap_free, swap_total float64
+	var mem_total, mem_free, swap_free, swap_total, buffers, cached float64
 
 	for scanner.Scan() {
 		str := scanner.Text()
@@ -50,6 +50,10 @@ func (s *System) collect() {
 			mem_total = pullFloat64(str)
 		} else if strings.HasPrefix(str, "MemFree") {
 			mem_free = pullFloat64(str)
+		} else if strings.HasPrefix(str, "Buffers") {
+			buffers = pullFloat64(str)
+		} else if strings.HasPrefix(str, "Cached") {
+			cached = pullFloat64(str)
 		} else if strings.HasPrefix(str, "SwapFree") {
 			swap_free = pullFloat64(str)
 		} else if strings.HasPrefix(str, "SwapTotal") {
@@ -58,7 +62,8 @@ func (s *System) collect() {
 	}
 
 	if mem_total != 0.0 {
-		s.updaters[memUsageGauge].Update(mem_free / mem_total * 100)
+		available := (mem_free + buffers + cached)
+		s.updaters[memUsageGauge].Update((mem_total - available) / mem_total * 100)
 	} else {
 		s.updaters[memUsageGauge].Update(0)
 	}

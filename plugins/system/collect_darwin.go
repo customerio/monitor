@@ -42,7 +42,7 @@ func (s *System) collect() {
 
 	scanner := bufio.NewScanner(strings.NewReader(string(vmstat)))
 
-	var pages_free, pages_active, swap float64
+	var pages_free, pages_active, swap, pages_inactive, pages_speculative, pages_wired float64
 
 	for scanner.Scan() {
 		str := scanner.Text()
@@ -50,13 +50,20 @@ func (s *System) collect() {
 			pages_free = pullFloat64(str, 2)
 		} else if strings.HasPrefix(str, "Pages active") {
 			pages_active = pullFloat64(str, 2)
+		} else if strings.HasPrefix(str, "Pages inactive") {
+			pages_inactive = pullFloat64(str, 2)
+		} else if strings.HasPrefix(str, "Pages speculative") {
+			pages_speculative = pullFloat64(str, 2)
+		} else if strings.HasPrefix(str, "Pages wired down") {
+			pages_wired = pullFloat64(str, 2)
 		} else if strings.HasPrefix(str, "Swapouts") {
 			swap = pullFloat64(str, 1)
 		}
 	}
 
 	if (pages_active + pages_free) != 0.0 {
-		s.updaters[memUsageGauge].Update(pages_active / (pages_active + pages_free) * 100)
+		total := pages_free + pages_active + pages_inactive + pages_speculative + pages_wired
+		s.updaters[memUsageGauge].Update(pages_active / total * 100)
 	} else {
 		s.updaters[memUsageGauge].Update(0)
 	}
