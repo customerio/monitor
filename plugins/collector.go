@@ -12,24 +12,50 @@ type Collector interface {
 	Collect(b *metrics.Batch)
 }
 
-var collectors []Collector
+// Group collectors by their intervals to minimize number of long running
+// goroutines spawned.
+var collectors = make(map[time.Duration][]Collector)
 
-func AddCollector(c Collector) {
-	collectors = append(collectors, c)
+func AddCollector(c Collector, d time.Duration) {
+	collectors[d] = append(collectors[d], c)
 }
 
-func Collect(source, email, token string, duration time.Duration) {
-	client := librato.NewClient(email, token)
-	collect(client, source, collectors)
-	for _ = range time.Tick(duration) {
-		collect(client, source, collectors)
+func Collect(source, email, token string, defaultDuration time.Duration, wg *sync.WaitGroup, stopSignal <-chan struct{}) {
+	var client = librato.NewClient(email, token)
+
+	wg.Add(len(collectors))
+	// We spawn long running goroutines for all different intervals that will
+	// collect stats from the associated collectors. Goroutines exit cleanly
+	// when kill signal is sent.
+	for duration, plugins := range collectors {
+		if duration == 0 {
+			duration = defaultDuration
+		}
+		go doCollection(duration, plugins, client, source, wg, stopSignal)
 	}
 }
 
-func collect(client *librato.Client, source string, collectors []Collector) {
-	start := time.Now()
+func doCollection(d time.Duration, collectors []Collector, client *librato.Client, source string, wg *sync.WaitGroup, stopSignal <-chan struct{}) {
+	var (
+		ticker = time.NewTicker(d)
+		stats  = metrics.NewBatch(source)
+	)
+loop:
+	for {
+		select {
+		case <-stopSignal:
+			break loop
+		case <-ticker.C:
+			gatherAndPublish(client, stats, collectors)
+			stats.Reset()
+		}
+	}
+	ticker.Stop()
+	wg.Done()
+}
 
-	b := metrics.NewBatch(source)
+func gatherAndPublish(client *librato.Client, b *metrics.Batch, collectors []Collector) {
+	start := time.Now()
 
 	// Do each collection in parallel. As a future improvement we might
 	// want to wait for up to a some time interval for collection to

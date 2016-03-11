@@ -3,6 +3,9 @@ package main
 import (
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/customerio/monitor/plugins"
 	"github.com/customerio/monitor/plugins/cpu"
@@ -16,59 +19,20 @@ import (
 	"github.com/customerio/monitor/plugins/write"
 	"github.com/customerio/monitor/plugins/zookeeper"
 
-	"flag"
 	"fmt"
 	"strings"
 	"time"
-
-	"code.google.com/p/gcfg"
 )
 
-var config_file = flag.String("config", "", "Configuration file path")
-
-type Config struct {
-	Services struct {
-		Librato string
-		Slack   string
-	}
-	Metrics struct {
-		Cpu           bool
-		Riak          string
-		Redis         string
-		MySQL         string
-		Zookeeper     []string
-		Write         []string
-		Elasticsearch string
-		System        bool
-		Disk          string
-		Etcd          string
-	}
-	Options struct {
-		Interval string
-		Hostname string
-		Logger   string
-	}
-}
-
 func main() {
-	flag.Parse()
 
-	var cfg Config
+	stop := make(chan struct{})
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, os.Interrupt, syscall.SIGTERM, os.Kill)
 
-	if *config_file != "" {
-		err := gcfg.ReadFileInto(&cfg, *config_file)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		panic(fmt.Errorf("Must specify a configuration file path"))
-	}
-
-	var duration time.Duration
-
-	// Default value for interval is 1s
-	if cfg.Options.Interval == "" {
-		cfg.Options.Interval = "1s"
+	cfg, err := parseConfig()
+	if err != nil {
+		panic(err)
 	}
 
 	// We don't want long waits on http connections.
@@ -76,51 +40,57 @@ func main() {
 
 	plugins.InitializeLogger(cfg.Options.Logger, "gomon")
 
-	duration, err := time.ParseDuration(cfg.Options.Interval)
-	if err != nil {
-		panic(err)
-	}
-
 	if cfg.Metrics.Cpu {
-		c := cpu.New()
-		plugins.AddCollector(c)
+		d := cfg.Intervals.Cpu
+		if d.Duration == 0 {
+			d = cfg.Options.Interval
+		}
+		c := cpu.New(&cpu.Config{
+			Threshold:         cfg.Options.CpuThreshold,
+			SampleRate:        cfg.Options.CpuSampleRate.Duration,
+			ReportingInterval: d.Duration,
+			SlackURL:          cfg.Services.Slack,
+			SlackInterval:     cfg.Options.SlackInterval.Duration,
+			Hostname:          cfg.Options.Hostname,
+		})
+		plugins.AddCollector(c, cfg.Intervals.Cpu.Duration)
 	}
 
 	if cfg.Metrics.Redis != "" {
 		c := redis.New()
-		plugins.AddCollector(c)
+		plugins.AddCollector(c, cfg.Intervals.Redis.Duration)
 	}
 
 	if cfg.Metrics.System {
 		s := system.New()
-		plugins.AddCollector(s)
+		plugins.AddCollector(s, cfg.Intervals.System.Duration)
 	}
 
 	if cfg.Metrics.Disk != "" {
 		for i, diskname := range strings.Split(cfg.Metrics.Disk, ",") {
 			d := disk.New(i, diskname)
-			plugins.AddCollector(d)
+			plugins.AddCollector(d, cfg.Intervals.Disk.Duration)
 		}
 	}
 
 	if cfg.Metrics.MySQL != "" {
 		m := mysql.New(cfg.Metrics.MySQL)
-		plugins.AddCollector(m)
+		plugins.AddCollector(m, cfg.Intervals.MySQL.Duration)
 	}
 
 	if cfg.Metrics.Etcd != "" {
-		m := etcd.New(cfg.Services.Slack, cfg.Metrics.Etcd)
-		plugins.AddCollector(m)
+		m := etcd.New(cfg.Services.Slack, cfg.Metrics.Etcd, cfg.Options.Hostname)
+		plugins.AddCollector(m, cfg.Intervals.Etcd.Duration)
 	}
 
 	if cfg.Metrics.Riak != "" {
 		r := riak.New(cfg.Metrics.Riak)
-		plugins.AddCollector(r)
+		plugins.AddCollector(r, cfg.Intervals.Riak.Duration)
 	}
 
 	if cfg.Metrics.Elasticsearch != "" {
 		r := elasticsearch.New(cfg.Metrics.Elasticsearch)
-		plugins.AddCollector(r)
+		plugins.AddCollector(r, cfg.Intervals.Elasticsearch.Duration)
 	}
 
 	if len(cfg.Metrics.Zookeeper) > 0 {
@@ -128,7 +98,7 @@ func main() {
 		for _, m := range cfg.Metrics.Zookeeper {
 			z.Add(m)
 		}
-		plugins.AddCollector(z)
+		plugins.AddCollector(z, cfg.Intervals.Zookeeper.Duration)
 	}
 
 	if len(cfg.Metrics.Write) > 0 {
@@ -136,7 +106,7 @@ func main() {
 		for _, m := range cfg.Metrics.Write {
 			z.Add(m)
 		}
-		plugins.AddCollector(z)
+		plugins.AddCollector(z, cfg.Intervals.Write.Duration)
 	}
 
 	var email, token string
@@ -153,5 +123,10 @@ func main() {
 		panic(err)
 	}
 
-	plugins.Collect(host, email, token, duration)
+	var wg sync.WaitGroup
+	plugins.Collect(host, email, token, cfg.Options.Interval.Duration, &wg, stop)
+
+	<-s
+	close(stop)
+	wg.Wait()
 }

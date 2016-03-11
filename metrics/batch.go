@@ -29,8 +29,15 @@ func (b *Batch) AddGauge(g librato.Gauge) {
 	b.Librato.Gauges = append(b.Librato.Gauges, g)
 	b.mutex.Unlock()
 }
+
 func (b *Batch) AddCounter(g librato.Counter) {
 	b.mutex.Lock()
 	b.Librato.Counters = append(b.Librato.Counters, g)
+	b.mutex.Unlock()
+}
+
+func (b *Batch) Reset() {
+	b.mutex.Lock()
+	b.Librato = librato.NewBatch()
 	b.mutex.Unlock()
 }

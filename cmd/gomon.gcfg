@@ -37,5 +37,19 @@ riak=localhost:8098
 ## Interval to send metrics (see http://golang.org/pkg/time/#ParseDuration)
 # interval=1s
 
+# cpu returns average utilization over the reporting period with a sampling rate defined here
+cpu-sample-rate=1s
+
+# when cpu.user utilization is above the specified threshold for 3 continuous samples we send a slack notification
+cpu-threshold=20
+
+# specify minimum interval between slack notifications so as to not spam the channel
+slack-interval=30s
+
 ## Sets the hostname (defaults to os.Hostname)
 # hostname=localhost
+
+# Can define reporting intervals for different metrics
+[Intervals]
+#cpu=30s
+#system=15s

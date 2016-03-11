@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -21,6 +20,7 @@ import (
 
 type Etcd struct {
 	slackURL string
+	hostname string
 	client   etcd.Client
 	last     string
 }
@@ -33,23 +33,14 @@ func (c *Etcd) postSlack(msg string) {
 
 	client := &http.Client{Timeout: time.Second * 10}
 
-	//ip := cfg.hostIP
-	var ip string
-	if len(ip) == 0 {
-		var err error
-		ip, err = os.Hostname()
-		if err != nil {
-			ip = "unknown"
-		}
-	}
 	type message struct {
 		Text string `json:"text"`
 	}
-	m := message{Text: fmt.Sprintf("report from host %s\n%s", ip, msg)}
+	m := message{Text: fmt.Sprintf("report from host %s\n%s", c.hostname, msg)}
 
 	body, err := json.Marshal(&m)
 	if err != nil {
-		fmt.Printf("etcd: post stack notification: %v: %s\n", err, msg)
+		fmt.Printf("etcd: could not marshal message: %v: %s\n", err, msg)
 		return
 	}
 
@@ -65,7 +56,7 @@ func (c *Etcd) postSlack(msg string) {
 	io.Copy(ioutil.Discard, resp.Body)
 }
 
-func New(slack string, u string) *Etcd {
+func New(slack, u, hostname string) *Etcd {
 	urls := strings.Split(u, ",")
 	c, err := etcd.New(etcd.Config{
 		Endpoints:               urls,
@@ -78,6 +69,7 @@ func New(slack string, u string) *Etcd {
 
 	return &Etcd{
 		slackURL: slack,
+		hostname: hostname,
 		client:   c,
 	}
 }
