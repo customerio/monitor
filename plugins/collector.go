@@ -47,7 +47,7 @@ loop:
 			break loop
 		case <-ticker.C:
 			gatherAndPublish(client, stats, collectors)
-			stats.Reset()
+			stats.Reset(source)
 		}
 	}
 	ticker.Stop()

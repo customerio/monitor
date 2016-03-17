@@ -36,8 +36,9 @@ func (b *Batch) AddCounter(g librato.Counter) {
 	b.mutex.Unlock()
 }
 
-func (b *Batch) Reset() {
+func (b *Batch) Reset(source string) {
 	b.mutex.Lock()
 	b.Librato = librato.NewBatch()
+	b.Librato.Source = source
 	b.mutex.Unlock()
 }
