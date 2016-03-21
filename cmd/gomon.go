@@ -52,6 +52,7 @@ func main() {
 			SlackURL:          cfg.Services.Slack,
 			SlackInterval:     cfg.Options.SlackInterval.Duration,
 			Hostname:          cfg.Options.Hostname,
+			SkipNotification:  cfg.SlackDisabled.Cpu,
 		})
 		plugins.AddCollector(c, cfg.Intervals.Cpu.Duration)
 	}
@@ -79,7 +80,7 @@ func main() {
 	}
 
 	if cfg.Metrics.Etcd != "" {
-		m := etcd.New(cfg.Services.Slack, cfg.Metrics.Etcd, cfg.Options.Hostname)
+		m := etcd.New(cfg.Services.Slack, cfg.Metrics.Etcd, cfg.Options.Hostname, cfg.SlackDisabled.Etcd)
 		plugins.AddCollector(m, cfg.Intervals.Etcd.Duration)
 	}
 

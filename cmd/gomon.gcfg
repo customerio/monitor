@@ -6,6 +6,9 @@
 ## Librato credentials [eg. me@example.com:TOKEN]
 # librato=EMAIL:TOKEN
 
+## Slack credentials
+# slack=WEBHOOK_URL
+
 ## Stathat account email
 # stathat=EMAIL
 
@@ -53,3 +56,7 @@ slack-interval=30s
 [Intervals]
 #cpu=30s
 #system=15s
+
+# Disable slack notifications for the specified metrics
+[SlackDisabled]
+# cpu

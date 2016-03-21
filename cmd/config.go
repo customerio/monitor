@@ -58,6 +58,10 @@ type Config struct {
 		Disk          DurationString
 		Etcd          DurationString
 	}
+	SlackDisabled struct {
+		Cpu  bool
+		Etcd bool
+	}
 }
 
 func parseConfig() (*Config, error) {

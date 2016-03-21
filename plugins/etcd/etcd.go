@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -16,47 +14,17 @@ import (
 	etcd "github.com/coreos/etcd/client"
 
 	"github.com/customerio/monitor/metrics"
+	"github.com/customerio/monitor/notifiers/slack"
 )
 
 type Etcd struct {
-	slackURL string
-	hostname string
-	client   etcd.Client
-	last     string
+	hostname    string
+	client      etcd.Client
+	last        string
+	slackClient *slack.Client
 }
 
-func (c *Etcd) postSlack(msg string) {
-	if len(c.slackURL) == 0 {
-		fmt.Printf("%s", msg)
-		return
-	}
-
-	client := &http.Client{Timeout: time.Second * 10}
-
-	type message struct {
-		Text string `json:"text"`
-	}
-	m := message{Text: fmt.Sprintf("report from host %s\n%s", c.hostname, msg)}
-
-	body, err := json.Marshal(&m)
-	if err != nil {
-		fmt.Printf("etcd: could not marshal message: %v: %s\n", err, msg)
-		return
-	}
-
-	v := url.Values{}
-	v.Set("payload", string(body))
-	resp, err := client.PostForm(c.slackURL, v)
-	if err != nil {
-		fmt.Printf("etcd: post stack notification: %v: %s\n", err, msg)
-		return
-	}
-
-	defer resp.Body.Close()
-	io.Copy(ioutil.Discard, resp.Body)
-}
-
-func New(slack, u, hostname string) *Etcd {
+func New(slackUrl, u, hostname string, skipNotification bool) *Etcd {
 	urls := strings.Split(u, ",")
 	c, err := etcd.New(etcd.Config{
 		Endpoints:               urls,
@@ -68,9 +36,14 @@ func New(slack, u, hostname string) *Etcd {
 	}
 
 	return &Etcd{
-		slackURL: slack,
 		hostname: hostname,
 		client:   c,
+		slackClient: slack.New(&slack.Config{
+			URL:      slackUrl,
+			Username: "etcd plugin",
+			Icon:     ":etcd_plugin:",
+			Enabled:  !skipNotification,
+		}),
 	}
 }
 
@@ -95,7 +68,11 @@ func (c *Etcd) Collect(batch *metrics.Batch) {
 		}
 
 		c.last = msg
-		c.postSlack(msg)
+		if health {
+			c.slackClient.Resolve(c.hostname, msg)
+		} else {
+			c.slackClient.Trigger(c.hostname, msg)
+		}
 	}()
 
 	if err != nil {

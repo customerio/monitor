@@ -1,16 +1,12 @@
 package cpu
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
 	"github.com/customerio/monitor/metrics"
+	"github.com/customerio/monitor/notifiers/slack"
 )
 
 const (
@@ -95,7 +91,7 @@ type CPU struct {
 	lastUpdate    time.Time
 	averages      []*sample
 	updaters      []metrics.Updater
-	slackURL      string
+	slackClient   *slack.Client
 }
 
 type Config struct {
@@ -105,6 +101,7 @@ type Config struct {
 	SlackURL          string
 	SlackInterval     time.Duration
 	Hostname          string
+	SkipNotification  bool
 }
 
 func New(cfg *Config) *CPU {
@@ -118,6 +115,9 @@ func New(cfg *Config) *CPU {
 		alertCount   int
 		resolveCount int
 	)
+	if cfg.SkipNotification {
+		ringSize = 1
+	}
 
 	c := &CPU{
 		averages: []*sample{
@@ -130,7 +130,12 @@ func New(cfg *Config) *CPU {
 			systemGauge: metrics.NewGauge("cpu.system"),
 			idleGauge:   metrics.NewGauge("cpu.idle"),
 		},
-		slackURL: cfg.SlackURL,
+		slackClient: slack.New(&slack.Config{
+			URL:      cfg.SlackURL,
+			Username: "cpu plugin",
+			Icon:     ":cpu_plugin:",
+			Enabled:  !cfg.SkipNotification,
+		}),
 	}
 
 	go func() {
@@ -143,6 +148,12 @@ func New(cfg *Config) *CPU {
 			}
 			avg := c.averages[userGauge].movingAvg()
 			c.mux.Unlock()
+
+			// Some servers workload might be periodic so they spike up for a
+			// while and then come back down so skip notifications for those hosts.
+			if cfg.SkipNotification {
+				continue
+			}
 
 			if avg >= cfg.Threshold {
 				if alertCount < 3 {
@@ -159,47 +170,16 @@ func New(cfg *Config) *CPU {
 			if alertCount == 3 && time.Since(lastUpdate) > cfg.SlackInterval {
 				triggered = true
 				lastUpdate = time.Now()
-				c.postSlack(cfg.Hostname, fmt.Sprintf("[ALERT]: cpu.user average utilization %f is higher than %f", avg, cfg.Threshold))
+				c.slackClient.Trigger(cfg.Hostname, fmt.Sprintf("cpu.user average utilization %.2f is higher than %.2f", avg, cfg.Threshold))
 			} else if triggered && resolveCount == 3 && time.Since(lastUpdate) > cfg.SlackInterval {
 				triggered = false
 				lastUpdate = time.Now()
-				c.postSlack(cfg.Hostname, "[RESOLVED]: cpu.user average utilization is within threshold")
+				c.slackClient.Resolve(cfg.Hostname, "cpu.user average utilization is within threshold")
 			}
 		}
 	}()
 
 	return c
-}
-
-func (c *CPU) postSlack(hostname, msg string) {
-	if len(c.slackURL) == 0 {
-		fmt.Printf("%s\n", msg)
-		return
-	}
-
-	client := &http.Client{Timeout: time.Second * 10}
-
-	type message struct {
-		Text string `json:"text"`
-	}
-	m := message{Text: fmt.Sprintf("report from host %s\n%s", hostname, msg)}
-
-	body, err := json.Marshal(&m)
-	if err != nil {
-		fmt.Printf("cpu: could not marshal message: %v: %s\n", err, msg)
-		return
-	}
-
-	v := url.Values{}
-	v.Set("payload", string(body))
-	resp, err := client.PostForm(c.slackURL, v)
-	if err != nil {
-		fmt.Printf("cpu: post stack notification: %v: %s\n", err, msg)
-		return
-	}
-
-	defer resp.Body.Close()
-	io.Copy(ioutil.Discard, resp.Body)
 }
 
 func (c *CPU) Collect(b *metrics.Batch) {
