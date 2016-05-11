@@ -18,10 +18,11 @@ import (
 )
 
 type Etcd struct {
-	hostname    string
-	client      etcd.Client
-	last        string
-	slackClient *slack.Client
+	hostname     string
+	client       etcd.Client
+	last         string
+	clusterState bool
+	slackClient  *slack.Client
 }
 
 func New(slackUrl, u, hostname string, skipNotification bool) *Etcd {
@@ -56,17 +57,19 @@ func (c *Etcd) Collect(batch *metrics.Batch) {
 	health := false
 	defer func() {
 		msg := string(b.Bytes())
-		// If the messages are the same we're done.
-		if msg == c.last {
+		// If the messages or the cluster states are the same we're done.
+		if msg == c.last || health == c.clusterState {
 			return
 		}
 
 		// We don't want to log healthy state initially.
 		if healthy == len(ms) && len(c.last) == 0 {
 			c.last = msg
+			c.clusterState = health
 			return
 		}
 
+		c.clusterState = health
 		c.last = msg
 		if health {
 			c.slackClient.Resolve(c.hostname, msg)
